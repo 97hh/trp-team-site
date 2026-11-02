@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrP Казань-Томск — Командный центр</title>
+<style>
+  /* ... СТИЛИ ОСТАЮТСЯ ПРЕЖНИМИ ... */
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #0f1115; color: #e6e6e6; min-height: 100vh; display: flex; flex-direction: column; }
+  #splash { position: fixed; inset: 0; background: #0f1115; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s; }
+  #splash.hide { opacity: 0; visibility: hidden; }
+  .loader { width: 60px; height: 60px; border: 4px solid #232838; border-top-color: #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 24px; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  .splash-text { font-size: 20px; font-weight: 600; letter-spacing: 1px; display: flex; align-items: center; }
+  .highlight { color: #2563eb; margin-left: 8px; }
+  .dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+  @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
+  #roleScreen { position: fixed; inset: 0; background: #0f1115; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+  #roleScreen h1 { margin: 0 0 20px; font-size: 28px; color: #fff; }
+  .btn-role { width: 280px; padding: 20px; font-size: 18px; border-radius: 12px; background: #151923; border: 2px solid #232838; color: #fff; cursor: pointer; transition: all 0.2s; text-align: center; font-weight: 600; }
+  .btn-role:hover { border-color: #2563eb; background: #1e293b; }
+  .btn-role small { display: block; font-size: 13px; color: #6b7280; margin-top: 5px; font-weight: normal; }
+  header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #151923; border-bottom: 1px solid #232838; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 18px; margin: 0; white-space: nowrap; }
+  .tabs { display: flex; gap: 5px; margin-left: 10px; }
+  .tab { padding: 8px 16px; border-radius: 8px; background: transparent; border: 1px solid #232838; color: #9ca3af; cursor: pointer; font-weight: 600; }
+  .tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .spacer { flex: 1; }
+  .who { font-size: 13px; color: #9ca3af; }
+  button { padding: 8px 12px; border-radius: 8px; border: 1px solid #2563eb; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+  button:hover { filter: brightness(1.1); }
+  button.ghost { background: transparent; border-color: #2a3142; color: #e6e6e6; }
+  .layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; padding: 16px; flex: 1; }
+  .layout.reader-mode { grid-template-columns: 1fr; max-width: 900px; margin: 0 auto; width: 100%; }
+  .layout.reader-mode #chat { display: none; }
+  .card { background: #151923; border: 1px solid #232838; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
+  #feed-header { margin-bottom: 20px; border-bottom: 2px solid #232838; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  #feed-header h2 { margin: 0; font-size: 24px; color: #fff; }
+  #feed { flex: 1; overflow-y: auto; }
+  .post-card { background: #0f1115; border: 1px solid #232838; border-radius: 10px; padding: 16px; margin-bottom: 12px; animation: slideIn .35s ease; }
+  .post-card h3 { margin: 0 0 10px; font-size: 18px; color: #fff; line-height: 1.3; }
+  .post-card p { margin: 0 0 12px; line-height: 1.6; color: #c9d1e0; font-size: 15px; white-space: pre-wrap; }
+  .post-card .meta { font-size: 12px; color: #6b7280; display: flex; justify-content: space-between; align-items: center; }
+  .post-card .ai-badge { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } }
+  #chat { height: calc(100vh - 100px); }
+  #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; }
+  .msg.ai { background: #1e293b; color: #dbeafe; align-self: flex-start; }
+  .msg.admin { background: #2563eb; color: #fff; align-self: flex-end; }
+  .input-row { display: flex; gap: 8px; margin-top: 10px;}
+  textarea { flex: 1; resize: none; height: 44px; padding: 10px; background: #0f1115; color: #e6e6e6; border: 1px solid #2a3142; border-radius: 8px; font-family: inherit; }
+  #toast { position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 99999; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  label { display: block; font-size: 13px; color: #9ca3af; margin: 10px 0 4px; }
+  input, select { width: 100%; padding: 9px 10px; border-radius: 8px; font-size: 14px; background: #0f1115; color: #e6e6e6; border: 1px solid #2a3142; }
+  .modal { position: fixed; inset: 0; background: rgba(15,17,21,.95); display: none; align-items: center; justify-content: center; z-index: 100000; }
+  .modal.show { display: flex; }
+  .modal-box { background: #151923; border: 1px solid #232838; border-radius: 14px; padding: 24px; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+  .modal-box h2 { margin: 0 0 14px; font-size: 17px; }
+  .err { min-height: 18px; margin-top: 10px; font-size: 13px; color: #ef4444; text-align: center; }
+  #editorList { margin-top: 15px; max-height: 200px; overflow-y: auto; border-top: 1px solid #232838; }
+  .editor-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #232838; font-size: 14px; }
+  .role-badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #232838; color: #9ca3af; margin-left: 5px; }
+  .role-owner { background: #854d0e; color: #fef08a; }
+  .role-creator { background: #1e3a8a; color: #93c5fd; }
+  .code-box { background: #050505; color: #38bdf8; font-family: monospace; padding: 12px; border-radius: 8px; font-size: 12px; white-space: pre-wrap; word-break: break-all; max-height: 250px; overflow-y: auto; margin-top: 10px; border: 1px solid #232838; }
+  #siteClosedOverlay { position: fixed; inset: 0; background: rgba(10, 10, 15, 0.98); z-index: 50000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+  #siteClosedOverlay.show { display: flex; }
+  .warning-cone { font-size: 100px; animation: wobble 2s ease-in-out infinite; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.5)); }
+  @keyframes wobble { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+  #siteClosedOverlay h1 { color: #ef4444; font-size: 32px; margin: 0 0 10px; letter-spacing: 2px; text-transform: uppercase; }
+  #ownerPromptBtn { display: none; opacity: 0; transform: translateY(20px); transition: all 0.8s; background: #151923; border: 2px solid #2563eb; color: #fff; padding: 15px 40px; font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); margin-top: 20px; }
+  #ownerPromptBtn.show { display: block; opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="loader"></div>
+  <div class="splash-text">Подключаемся к <span class="highlight">TrP Казань-Томск</span><span class="dots"></span></div>
+</div>
+
+<div id="siteClosedOverlay">
+  <div class="warning-cone">🚧</div>
+  <h1>Доступ закрыт</h1>
+  <p style="color: #9ca3af; margin-bottom: 20px;">Технические работы.</p>
+  <button id="ownerPromptBtn">Вы владелец?</button>
+</div>
+
+<div id="roleScreen">
+  <h1>Добро пожаловать!</h1>
+  <button class="btn-role" onclick="selectRole('reader')">📖 Я Читатель<small>Смотреть новости</small></button>
+  <button class="btn-role" onclick="selectRole('editor')">✍️ Я Сотрудник<small>Вход для публикации</small></button>
+</div>
+
+<header>
+  <h1>TrP News</h1>
+  <div class="tabs" id="tabs" style="display:none;">
+    <button class="tab active" data-city="kazan">Казань</button>
+    <button class="tab" data-city="tomsk">Томск</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="who" id="who"></span>
+  <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews()">🔄 Обновить</button>
+  <button id="btnExportSites" class="ghost" style="display:none; border-color:#38bdf8; color:#38bdf8;" onclick="openExportModal()">📋 Код для Google Sites</button>
+  <button id="btnOrgPanel" class="ghost" style="display:none; border-color:#a855f7; color:#a855f7;">🏢 Организация</button>
+  <button id="btnCloseSite" class="ghost" style="display:none; border-color: #ef4444; color: #ef4444;">🔒 Закрыть</button>
+  <button id="btnOpenSite" class="ghost" style="display:none; border-color: #22c55e; color: #22c55e;">🔓 Открыть</button>
+  <button id="btnAdminPanel" class="ghost" style="display:none;">Пользователи</button>
+  <button id="btnLogout" class="ghost" style="display:none; border-color: #6b7280; color: #9ca3af;" onclick="logout()">Выйти</button>
+</header>
+
+<div class="layout" id="mainLayout">
+  <section class="card">
+    <div id="feed-header">
+      <div>
+        <h2 id="feedCityName">Новости</h2>
+        <p style="color: #6b7280; font-size: 14px; margin: 5px 0 0;">Последние события</p>
+      </div>
+    </div>
+    <div id="feed"></div>
+  </section>
+
+  <section class="card" id="chat">
+    <h2 style="margin: 0 0 12px; font-size: 15px; color: #9ca3af; text-transform: uppercase;">ИИ-Редактор</h2>
+    <div id="messages"></div>
+    <div class="input-row">
+      <textarea id="adminInput" placeholder="Введите новость..." disabled></textarea>
+      <button id="btnSend" disabled>Отправить</button>
+    </div>
+    <div class="input-row">
+      <button id="btnAsk" class="ghost" disabled style="flex:1">Спросить новости</button>
+      <button id="btnClearFeed" class="ghost" style="flex:1">Очистить ленту</button>
+    </div>
+    <div id="status" style="font-size: 13px; margin-top: 10px; color: #6b7280;">Ожидание входа</div>
+  </section>
+</div>
+
+<div id="toast">✅ Готово</div>
+
+<!-- МОДАЛКИ -->
+<div id="loginModal" class="modal">
+  <div class="modal-box">
+    <h2>Вход</h2>
+    <label>Логин</label>
+    <input id="loginName" type="text" placeholder="admin">
+    <label>Пароль</label>
+    <input id="loginPass" type="password" placeholder="••••••••">
+    <button id="btnLogin" style="width:100%; margin-top:16px">Войти</button>
+    <div id="loginErr" class="err"></div>
+  </div>
+</div>
+
+<div id="ownerLoginModal" class="modal">
+  <div class="modal-box" style="border-color: #ef4444;">
+    <h2 style="color: #ef4444;">Авторизация Владельца</h2>
+    <label>Логин</label>
+    <input id="ownerLoginName" type="text" placeholder="admin">
+    <label>Пароль</label>
+    <input id="ownerLoginPass" type="password" placeholder="••••••••">
+    <button id="btnOwnerLogin" style="width:100%; margin-top:16px; background: #ef4444; border-color: #ef4444;">Войти как Владелец</button>
+    <div id="ownerLoginErr" class="err"></div>
+  </div>
+</div>
+
+<div id="adminModal" class="modal">
+  <div class="modal-box" style="width: 500px;">
+    <h2>Управление командой</h2>
+    <div style="background:#0f1115; padding:12px; border-radius:8px; border:1px solid #232838; margin-bottom:15px;">
+      <label style="margin-top:0;">Добавить пользователя</label>
+      <input id="newEditorName" type="text" placeholder="Имя / Логин" style="margin-bottom:8px;">
+      <input id="newEditorPass" type="text" placeholder="Пароль" style="margin-bottom:8px;">
+      <label style="margin-top:0;">Роль</label>
+      <select id="newEditorRole" style="margin-bottom:8px;">
+        <option value="creator">Создатель</option>
+        <option value="staff">Сотрудник</option>
+        <option value="intern">Стажёр</option>
+        <option value="owner">Владелец</option>
+      </select>
+      <label style="margin-top:0;">Студия</label>
+      <select id="newEditorCity" style="margin-bottom:8px;">
+        <option value="kazan">Казань</option>
+        <option value="tomsk">Томск</option>
+        <option value="all">Все города</option>
+      </select>
+      <button id="btnAddEditor" style="width:100%;">Добавить</button>
+      <div id="adminErr" class="err" style="text-align:left;"></div>
+    </div>
+    <label>Список пользователей</label>
+    <div id="editorList"></div>
+    <button id="btnCloseAdmin" class="ghost" style="width:100%; margin-top:20px;">Закрыть</button>
+  </div>
+</div>
+
+<div id="exportModal" class="modal">
+  <div class="modal-box" style="width: 600px;">
+    <h2>Экспорт на Google Sites</h2>
+    <p style="font-size:13px; color:#9ca3af;">Вставьте этот код на Google Sites через <b>Вставка → Встроить код</b>.</p>
+    <div class="code-box" id="exportCodeBox"></div>
+    <button onclick="copyExportCode()" style="width:100%; margin-top:15px; background:#38bdf8; border-color:#38bdf8; color:#000;">📋 Скопировать код</button>
+    <button onclick="closeModal('exportModal')" class="ghost" style="width:100%; margin-top:10px;">Закрыть</button>
+  </div>
+</div>
+
+<div id="orgModal" class="modal">
+  <div class="modal-box" style="width: 550px;">
+    <h2>🏢 Управление организацией</h2>
+    <div id="orgWarning" style="text-align: center; padding: 30px; background: rgba(239, 68, 68, 0.1); border: 2px dashed #ef4444; border-radius: 12px; margin-bottom: 20px; display: none;">
+      <span style="font-size: 70px; display: block; margin-bottom: 10px;">❗</span>
+      <h3 style="color:#ef4444; margin:0 0 10px;">ВНИМАНИЕ</h3>
+      <p style="margin:0 0 20px; color:#c9d1e0; font-size:15px;">Организация не заполнена!</p>
+      <button onclick="showOrgForm()" style="width:100%; padding:15px; background:#ef4444; border:none;">Заполнить данные</button>
+    </div>
+    <div id="orgForm" style="display: none; background:#0f1115; padding:15px; border-radius:8px; border:1px solid #232838; margin-bottom:20px;">
+      <label>Название организации</label>
+      <input id="orgName" type="text" placeholder="Например: TrP Медиа" style="margin-bottom:10px;">
+      <label>ИНН / Реквизиты</label>
+      <input id="orgINN" type="text" placeholder="1234567890" style="margin-bottom:15px;">
+      <button onclick="saveOrgInfo()" style="width:100%; background:#22c55e; border-color:#22c55e;">Сохранить</button>
+    </div>
+    <div id="orgInfoDisplay" style="display: none; background:#0f1115; padding:15px; border-radius:8px; border:1px solid #232838; margin-bottom:20px;">
+      <p style="margin:0 0 5px; font-size:16px;"><b id="displayOrgName">—</b></p>
+      <p style="margin:0; font-size:13px; color:#6b7280;">ИНН: <span id="displayOrgINN">—</span></p>
+    </div>
+    <div id="fireSection">
+      <h3 style="color:#ef4444; font-size:15px; margin: 0 0 10px; border-top:1px solid #232838; padding-top:15px;">Уволить сотрудника</h3>
+      <select id="fireEmpSelect" style="margin-bottom:8px;"></select>
+      <input id="fireReason" type="text" placeholder="Причина увольнения" style="margin-bottom:8px;">
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <div style="flex:1;"><label>Работал с</label><input id="fireDateFrom" type="date"></div>
+        <div style="flex:1;"><label>По</label><input id="fireDateTo" type="date"></div>
+      </div>
+      <button onclick="fireEmployee()" style="width:100%; background:#ef4444; border-color:#ef4444;">Уволить</button>
+    </div>
+    <div style="margin-top:20px; border-top:1px solid #232838; padding-top:15px;">
+      <h3 style="color:#9ca3af; font-size:15px; margin: 0 0 10px;">Журнал увольнений</h3>
+      <div id="firingLogList" style="max-height: 150px; overflow-y: auto;"></div>
+    </div>
+    <button id="btnCloseOrg" class="ghost" style="width:100%; margin-top:20px;">Закрыть</button>
+  </div>
+</div>
+
+<script>
+// ВСТАВЛЕНА ВАША ССЫЛКА FIREBASE
+const FIREBASE_URL = 'https://trp-news-default-rtdb.firebaseio.com/';
+
+var storageEnabled = false;
+try { localStorage.setItem('test', '1'); localStorage.removeItem('test'); storageEnabled = true; } catch(e) {}
+
+var $ = function(id) { return document.getElementById(id); };
+var DB_KEY = 'trp_news_database_v3';
+
+var state = {
+  user: null, 
+  city: 'kazan',
+  isSiteClosed: false,
+  db: {
+    users: [
+      { name: 'admin', pass: '1qaz2wsx3edc', role: 'owner', city: 'all' },
+      { name: 'creator', pass: '123', role: 'creator', city: 'all' },
+      { name: 'staff', pass: '123', role: 'staff', city: 'kazan' },
+      { name: 'intern', pass: '123', role: 'intern', city: 'tomsk' }
+    ],
+    feed_kazan: [],
+    feed_tomsk: [],
+    customCode: '',
+    siteClosed: 'false',
+    orgInfo: null,
+    firingLog: []
+  }
+};
+
+function loadLocal() {
+  if (!storageEnabled) return;
+  var data = localStorage.getItem(DB_KEY);
+  if (data) {
+    try {
+      var parsed = JSON.parse(data);
+      if (!parsed.users) parsed.users = state.db.users;
+      if (!parsed.feed_kazan) parsed.feed_kazan = [];
+      if (!parsed.feed_tomsk) parsed.feed_tomsk = [];
+      if (!parsed.firingLog) parsed.firingLog = [];
+      state.db = parsed;
+    } catch(e) {}
+  }
+}
+
+function saveLocal() {
+  if (storageEnabled) localStorage.setItem(DB_KEY, JSON.stringify(state.db));
+}
+
+// ================= СВЯЗЬ С FIREBASE =================
+async function fetchCloudNews() {
+  try {
+    const res = await fetch(FIREBASE_URL + 'news.json');
+    const data = await res.json();
+    if (data) {
+      const arr = Object.values(data);
+      // Разделяем по городам
+      state.db.feed_kazan = arr.filter(n => n.city === 'kazan').sort((a,b) => b.time - a.time);
+      state.db.feed_tomsk = arr.filter(n => n.city === 'tomsk').sort((a,b) => b.time - a.time);
+      renderFeed();
+    }
+  } catch(e) { console.log('Ожидание данных из Firebase...'); }
+}
+
+async function savePost(post) {
+  // Мгновенно показываем в ленте
+  post.city = state.city; // Добавляем метку города
+  post.time = Date.now();
+  
+  var posts = state.db['feed_' + state.city] || [];
+  posts.unshift(post); 
+  state.db['feed_' + state.city] = posts.slice(0, 50);
+  saveLocal(); renderFeed(); 
+
+  // Отправляем в Firebase
+  try {
+    await fetch(FIREBASE_URL + 'news.json', {
+      method: 'POST',
+      body: JSON.stringify(post)
+    });
+    showToast('✅ Отправлено на Google Sites!');
+  } catch(e) {
+    showToast('Ошибка облака', true);
+  }
+}
+
+window.addEventListener('load', function() {
+  loadLocal();
+  if (state.db.customCode) $('custom-code-container').innerHTML = state.db.customCode;
+  state.isSiteClosed = state.db.siteClosed === 'true';
+  
+  // Запускаем синхронизацию с облаком
+  fetchCloudNews();
+  setInterval(fetchCloudNews, 5000); // каждые 5 секунд проверяем новости
+
+  setTimeout(function() {
+    $('splash').classList.add('hide');
+    setTimeout(function() {
+      $('splash').style.display = 'none';
+      if (state.isSiteClosed) {
+        if (sessionStorage.getItem('ownerSessionActive') !== 'true') showSiteClosedOverlay();
+        else $('roleScreen').style.display = 'flex';
+      } else {
+        $('roleScreen').style.display = 'flex';
+      }
+    }, 600);
+  }, 1500); 
+});
+
+function logout() {
+  if (confirm('Выйти из аккаунта?')) {
+    try { sessionStorage.removeItem('ownerSessionActive'); } catch(e) {}
+    location.reload();
+  }
+}
+
+// ================= БЛОКИРОВКА САЙТА =================
+function showSiteClosedOverlay() {
+  $('siteClosedOverlay').classList.add('show');
+  $('roleScreen').style.display = 'none';
+  $('ownerPromptBtn').classList.remove('show');
+  setTimeout(function() { $('ownerPromptBtn').classList.add('show'); }, 5000);
+}
+
+$('btnCloseSite').onclick = function() {
+  if (state.user.role !== 'owner') return;
+  state.db.siteClosed = 'true'; saveLocal(); state.isSiteClosed = true; showSiteClosedOverlay();
+};
+
+$('btnOpenSite').onclick = function() {
+  if (state.user.role !== 'owner') return;
+  state.db.siteClosed = 'false'; saveLocal(); state.isSiteClosed = false; $('siteClosedOverlay').classList.remove('show');
+  showToast('Доступ открыт'); updateOwnerButtons();
+};
+
+$('ownerPromptBtn').onclick = function() {
+  $('ownerLoginModal').classList.add('show');
+  $('ownerLoginErr').textContent = ''; $('ownerLoginName').value = ''; $('ownerLoginPass').value = '';
+};
+
+$('btnOwnerLogin').onclick = function() {
+  var name = $('ownerLoginName').value.trim().toLowerCase();
+  var pass = $('ownerLoginPass').value.trim();
+  if (name === 'admin' && pass === '1qaz2wsx3edc') {
+    try { sessionStorage.setItem('ownerSessionActive', 'true'); } catch(e) {}
+    state.isSiteClosed = false;
+    $('ownerLoginModal').classList.remove('show'); $('siteClosedOverlay').classList.remove('show');
+    state.user = state.db.users[0]; doLoginSuccess();
+  } else { $('ownerLoginErr').textContent = 'Доступ только для Владельца.'; }
+};
+
+function updateOwnerButtons() {
+  if (!state.user || state.user.role !== 'owner') {
+    $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; return;
+  }
+  if (state.isSiteClosed) { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'inline-block'; }
+  else { $('btnCloseSite').style.display = 'inline-block'; $('btnOpenSite').style.display = 'none'; }
+}
+
+// ================= ВХОД =================
+function selectRole(role) {
+  $('roleScreen').style.display = 'none';
+  if (role === 'reader') {
+    $('who').textContent = 'Гость (Читатель)';
+    $('tabs').style.display = 'flex'; $('btnRefresh').style.display = 'inline-block';
+    $('mainLayout').classList.add('reader-mode');
+    switchTab('kazan'); 
+  } else { $('loginModal').classList.add('show'); }
+}
+
+$('btnLogin').onclick = function() {
+  var name = $('loginName').value.trim().toLowerCase();
+  var pass = $('loginPass').value.trim();
+  var found = state.db.users.find(function(e) { return e.name.toLowerCase() === name && e.pass === pass; });
+  if (found) { state.user = found; doLoginSuccess(); }
+  else { $('loginErr').textContent = 'Неверный логин или пароль'; }
+};
+
+function doLoginSuccess() {
+  $('loginModal').classList.remove('show'); $('roleScreen').style.display = 'none';
+  var roleMap = { 'owner': 'Владелец', 'creator': 'Создатель', 'staff': 'Сотрудник', 'intern': 'Стажёр' };
+  $('who').textContent = state.user.name + ' (' + roleMap[state.user.role] + ')';
+  $('btnLogout').style.display = 'inline-block';
+  
+  var isEditor = state.user.role === 'owner' || state.user.role === 'creator';
+  var isOwner = state.user.role === 'owner';
+
+  $('btnExportSites').style.display = isEditor ? 'inline-block' : 'none';
+  $('btnAdminPanel').style.display = isOwner ? 'inline-block' : 'none';
+  $('btnOrgPanel').style.display = isOwner ? 'inline-block' : 'none';
+  $('tabs').style.display = isEditor ? 'flex' : 'none';
+  
+  if (isOwner) updateOwnerButtons();
+  else { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; }
+
+  if (isEditor) {
+    $('adminInput').disabled = false; $('btnSend').disabled = false; $('btnAsk').disabled = false;
+    $('mainLayout').classList.remove('reader-mode');
+    state.city = (state.user.city === 'all') ? 'kazan' : state.user.city;
+  } else {
+    $('mainLayout').classList.add('reader-mode');
+    state.city = (state.user.city === 'all') ? 'kazan' : state.user.city;
+  }
+  switchTab(state.city);
+}
+
+// ================= ВКЛАДКИ И ЛЕНТА =================
+document.querySelectorAll('.tab').forEach(function(btn) {
+  btn.onclick = function() {
+    document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active'); switchTab(btn.getAttribute('data-city'));
+  };
+});
+
+function switchTab(city) {
+  state.city = city;
+  $('feedCityName').textContent = 'Новости ' + (city === 'kazan' ? 'Казани' : 'Томска');
+  document.querySelectorAll('.tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-city') === city); });
+  renderFeed();
+  if (state.user && (state.user.role === 'owner' || state.user.role === 'creator')) initChat(city);
+}
+
+function renderFeed() {
+  var feed = $('feed'); if (!feed) return;
+  var posts = state.db['feed_' + state.city] || [];
+  if (!posts.length) { feed.innerHTML = '<div style="color:#6b7280; text-align:center; margin-top:50px;">Новостей пока нет...</div>'; return; }
+  
+  feed.innerHTML = '';
+  posts.forEach(function(post) {
+    var el = document.createElement('article'); el.className = 'post-card';
+    var time = new Date(post.time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    el.innerHTML = '<h3>' + escapeHtml(post.title) + '</h3><p>' + escapeHtml(post.body) + '</p>' +
+      '<div class="meta"><span>' + time + '</span>' + (post.ai ? '<span class="ai-badge">ИИ-обработка</span>' : '') + '</div>';
+    feed.appendChild(el);
+  });
+}
+
+// ================= ЧАТ И ИИ =================
+function initChat(city) { $('messages').innerHTML = ''; addMsg('Привет! Напишите новость, и она появится на сайте.', 'ai'); }
+function addMsg(text, side) {
+  var el = document.createElement('div'); el.className = 'msg ' + side; el.textContent = text;
+  $('messages').appendChild(el); $('messages').scrollTop = $('messages').scrollHeight;
+}
+
+$('btnAsk').onclick = function() { addMsg('Какие новости на сегодня?', 'ai'); };
+
+$('btnSend').onclick = async function() {
+  var text = $('adminInput').value.trim(); if (!text) return;
+  $('adminInput').value = ''; addMsg(text, 'admin'); 
+  
+  addMsg('⏳ Сохраняю...', 'ai');
+  var post = { title: 'Новость', body: text, ai: false }; // Без ИИ для простоты, можно вернуть GigaChat
+  await savePost(post);
+  $('messages').lastChild.remove(); addMsg('✅ Опубликовано!', 'ai');
+};
+
+// ================= ЭКСПОРТ НА GOOGLE SITES =================
+function openExportModal() {
+  $('exportModal').classList.add('show');
+}
+function copyExportCode() {
+  // Код для Google Sites, который читает Firebase
+  var code = `<div id="trp-news-widget" style="font-family: sans-serif; max-width: 800px; margin: 0 auto;"></div>
+<script>
+  const firebaseUrl = '${FIREBASE_URL}';
+  async function loadNews() {
+    try {
+      const res = await fetch(firebaseUrl + 'news.json');
+      const data = await res.json();
+      const container = document.getElementById('trp-news-widget');
+      if (!data) { container.innerHTML = '<p style="text-align:center;color:#666;">Новостей пока нет</p>'; return; }
+      
+      const arr = Object.values(data).sort((a,b) => b.time - a.time);
+      container.innerHTML = arr.map(n => \`
+        <div style="background:#fff; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-left:4px solid #2563eb;">
+          <div style="font-size:12px; color:#2563eb; font-weight:bold; margin-bottom:8px;">\${n.city === 'kazan' ? 'КАЗАНЬ' : 'ТОМСК'}</div>
+          <h3 style="margin:0 0 8px; font-size:18px; color:#1e293b;">\${n.title}</h3>
+          <p style="margin:0 0 12px; font-size:12px; color:#64748b;">\${new Date(n.time).toLocaleDateString('ru-RU')}</p>
+          <p style="margin:0; font-size:15px; line-height:1.6; color:#334155; white-space:pre-wrap;">\${n.body}</p>
+        </div>
+      \`).join('');
+    } catch(e) { console.log('Ждем данные...'); }
+  }
+  loadNews();
+  setInterval(loadNews, 5000);
+<\/script>`;
+  
+  navigator.clipboard.writeText(code).then(() => showToast('Код для Google Sites скопирован!')).catch(() => {
+    alert('Не удалось скопировать. Выделите текст вручную.');
+  });
+}
+
+// ================= ПОЛЬЗОВАТЕЛИ И ОРГАНИЗАЦИЯ =================
+$('btnAdminPanel').onclick = function() { $('adminModal').classList.add('show'); renderUsersList(); };
+$('btnCloseAdmin').onclick = function() { $('adminModal').classList.remove('show'); };
+
+function renderUsersList() {
+  var list = $('editorList'); list.innerHTML = '';
+  state.db.users.forEach(function(e) {
+    var item = document.createElement('div'); item.className = 'editor-item';
+    var roleMap = { 'owner': 'Владелец', 'creator': 'Создатель', 'staff': 'Сотрудник', 'intern': 'Стажёр' };
+    var roleClass = e.role === 'owner' ? 'role-owner' : (e.role === 'creator' ? 'role-creator' : '');
+    item.innerHTML = `<div><b>${e.name}</b> <span class="role-badge ${roleClass}">${roleMap[e.role]}</span></div>`;
+    list.appendChild(item);
+  });
+}
+
+$('btnAddEditor').onclick = function() {
+  var name = $('newEditorName').value.trim(); var pass = $('newEditorPass').value.trim();
+  var role = $('newEditorRole').value; var city = $('newEditorCity').value;
+  if (name.length < 2 || pass.length < 3) { $('adminErr').textContent = 'Слишком коротко'; return; }
+  if (state.db.users.find(function(e) { return e.name.toLowerCase() === name.toLowerCase(); })) { $('adminErr').textContent = 'Уже есть'; return; }
+  state.db.users.push({ name: name, pass: pass, role: role, city: role === 'owner' ? 'all' : city });
+  saveLocal(); $('newEditorName').value = ''; $('newEditorPass').value = ''; $('adminErr').textContent = '';
+  renderUsersList(); showToast('Пользователь добавлен');
+};
+
+$('btnOrgPanel').onclick = function() { $('orgModal').classList.add('show'); renderOrgPanel(); };
+$('btnCloseOrg').onclick = function() { $('orgModal').classList.remove('show'); };
+
+function renderOrgPanel() {
+  if (state.db.orgInfo) {
+    $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'block';
+    $('displayOrgName').textContent = state.db.orgInfo.name; $('displayOrgINN').textContent = state.db.orgInfo.inn;
+  } else {
+    $('orgWarning').style.display = 'block'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'none';
+  }
+  var select = $('fireEmpSelect'); select.innerHTML = '<option value="">-- Выберите --</option>';
+  var possible = state.db.users.filter(function(e) { return e.name !== 'admin'; });
+  if (possible.length === 0) select.innerHTML = '<option value="">Нет сотрудников</option>';
+  else possible.forEach(function(e) {
+    var opt = document.createElement('option'); opt.value = e.name; opt.textContent = e.name; select.appendChild(opt);
+  });
+  var logList = $('firingLogList');
+  if (state.db.firingLog.length === 0) { logList.innerHTML = '<p style="color:#6b7280; font-size:13px;">Пусто</p>'; }
+  else {
+    logList.innerHTML = '';
+    state.db.firingLog.slice().reverse().forEach(function(log) {
+      var item = document.createElement('div'); item.className = 'fire-log-item';
+      item.style = "background:#0f1115; border:1px solid #232838; padding:10px; border-radius:8px; margin-bottom:8px; font-size:13px;";
+      item.innerHTML = `Уволен: <b>${escapeHtml(log.empName)}</b><br>Причина: ${escapeHtml(log.reason)}<br><span style="color:#6b7280; font-size:11px;">Уволил: ${escapeHtml(log.firedBy)}</span>`;
+      logList.appendChild(item);
+    });
+  }
+}
+function showOrgForm() { $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'block'; }
+function saveOrgInfo() {
+  var name = $('orgName').value.trim(); var inn = $('orgINN').value.trim();
+  if (!name) { alert('Введите название'); return; }
+  state.db.orgInfo = { name: name, inn: inn }; saveLocal(); showToast('Сохранено'); renderOrgPanel();
+}
+function fireEmployee() {
+  var emp = $('fireEmpSelect').value; var reason = $('fireReason').value.trim();
+  var dFrom = $('fireDateFrom').value; var dTo = $('fireDateTo').value;
+  if (!emp || !reason || !dFrom || !dTo) { alert('Заполните все поля'); return; }
+  state.db.users = state.db.users.filter(function(e) { return e.name !== emp; });
+  var now = new Date();
+  state.db.firingLog.push({ empName: emp, reason: reason, dateFrom: dFrom, dateTo: dTo, firedBy: state.user.name, dateFired: now.toLocaleDateString('ru-RU') });
+  saveLocal(); $('fireReason').value = ''; $('fireDateFrom').value = ''; $('fireDateTo').value = '';
+  showToast('Сотрудник уволен'); renderOrgPanel();
+}
+
+// ================= УТИЛИТЫ =================
+function closeModal(id) { $(id).classList.remove('show'); }
+function showToast(msg) {
+  var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+document.getElementById('passInput')?.addEventListener('keypress', function(e) { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
