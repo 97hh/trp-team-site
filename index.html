@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrP Казань-Томск — Командный центр</title>
+<style>
+    :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --text: #1e293b;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+    }
+
+    /* Экран входа */
+    #loginScreen {
+        position: fixed; inset: 0;
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; z-index: 1000;
+    }
+    .login-box {
+        background: white; padding: 40px 32px; border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 400px;
+    }
+    .login-box .logo { text-align: center; font-size: 60px; margin-bottom: 10px; }
+    .login-box h1 { text-align: center; font-size: 22px; color: #1e3a8a; margin-bottom: 8px; }
+    .login-box .subtitle { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; color: #4b5563; font-weight: 600; margin-bottom: 6px; }
+    .field input {
+        width: 100%; padding: 12px 14px; border: 2px solid var(--border);
+        border-radius: 10px; font-size: 15px; outline: none; background: #f9fafb; transition: 0.2s;
+    }
+    .field input:focus { border-color: var(--primary); background: white; }
+    .login-btn {
+        width: 100%; padding: 14px; background: var(--primary); color: white;
+        border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+        cursor: pointer; margin-top: 8px; transition: 0.2s;
+    }
+    .login-btn:hover { background: var(--primary-dark); }
+    .error { color: var(--danger); font-size: 13px; text-align: center; margin-top: 12px; min-height: 18px; }
+    .hint { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 16px; background: #f3f4f6; padding: 10px; border-radius: 8px; line-height: 1.6; }
+
+    /* Основное приложение */
+    #mainApp { display: none; }
+    .header {
+        background: white; border-bottom: 1px solid var(--border);
+        padding: 0 24px; height: 64px; display: flex; align-items: center;
+        justify-content: space-between; position: sticky; top: 0; z-index: 100;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: var(--primary); }
+    .header-user { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+    .avatar {
+        width: 36px; height: 36px; border-radius: 50%; background: #dbeafe;
+        color: var(--primary); display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 14px;
+    }
+    .logout-btn {
+        background: transparent; border: 1px solid var(--border); color: var(--muted);
+        padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600;
+    }
+    .logout-btn:hover { background: #f1f5f9; color: var(--danger); border-color: var(--danger); }
+
+    .layout { display: flex; max-width: 1400px; margin: 0 auto; }
+    .sidebar {
+        width: 240px; background: white; border-right: 1px solid var(--border);
+        min-height: calc(100vh - 64px); padding: 20px 0; position: sticky; top: 64px;
+        height: calc(100vh - 64px); overflow-y: auto;
+    }
+    .nav-item {
+        padding: 12px 24px; display: flex; align-items: center; gap: 12px;
+        cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted);
+        transition: 0.15s; border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: #f8fafc; color: var(--primary); }
+    .nav-item.active { background: #eff6ff; color: var(--primary); border-left-color: var(--primary); }
+    .nav-item .icon { font-size: 18px; }
+
+    .content { flex: 1; padding: 24px; min-width: 0; }
+    .page { display: none; animation: fadeIn 0.2s; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .page-header h1 { font-size: 24px; }
+    .page-header .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .btn {
+        padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer;
+        font-weight: 600; font-size: 14px; transition: 0.15s; display: inline-flex;
+        align-items: center; gap: 6px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #f8fafc; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 16px; }
+    .card h2 { font-size: 16px; margin-bottom: 14px; }
+
+    .news-list { display: flex; flex-direction: column; gap: 16px; }
+    .news-card {
+        background: white; border-radius: var(--radius); padding: 20px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04); border-left: 4px solid var(--primary);
+    }
+    .news-card .news-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .news-card .news-title { font-size: 17px; font-weight: 700; }
+    .news-card .news-meta { font-size: 12px; color: var(--muted); }
+    .news-card .news-body { font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap; }
+    .news-card .news-actions { margin-top: 12px; display: flex; gap: 8px; }
+
+    /* Модальные окна */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+        background: white; border-radius: 14px; width: 100%; max-width: 500px;
+        max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h2 { font-size: 17px; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); line-height: 1; }
+    .modal-body { padding: 22px; }
+    .modal-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select {
+        width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+        font-size: 14px; outline: none; font-family: inherit;
+    }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); }
+
+    .code-box {
+        background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px;
+        font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all;
+        max-height: 300px; overflow-y: auto; margin-bottom: 12px;
+    }
+
+    .toast {
+        position: fixed; bottom: 20px; right: 20px; background: var(--success);
+        color: white; padding: 14px 22px; border-radius: 10px; font-weight: 600;
+        box-shadow: 0 4px 16px rgba(16,185,129,0.4); transform: translateY(100px);
+        opacity: 0; transition: 0.3s; z-index: 10000; font-size: 14px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { background: var(--danger); box-shadow: 0 4px 16px rgba(239,68,68,0.4); }
+
+    @media (max-width: 800px) {
+        .sidebar { width: 70px; }
+        .sidebar .nav-item span:not(.icon) { display: none; }
+        .sidebar .nav-item { justify-content: center; padding: 14px 0; }
+        .content { padding: 16px; }
+        .header { padding: 0 16px; }
+        .header-user span { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<!-- ЭКРАН ВХОДА -->
+<div id="loginScreen">
+    <div class="login-box">
+        <div class="logo">📰</div>
+        <h1>TrP Казань-Томск</h1>
+        <p class="subtitle">Командный центр</p>
+        <div class="field">
+            <label>Логин</label>
+            <input type="text" id="loginInput" placeholder="admin" value="admin">
+        </div>
+        <div class="field">
+            <label>Пароль</label>
+            <input type="password" id="passInput" placeholder="••••••••" value="1qaz2wsx3edc">
+        </div>
+        <button class="login-btn" onclick="doLogin()">Войти в систему</button>
+        <div class="error" id="errorMsg"></div>
+        <div class="hint">
+            <b>Владелец:</b> admin / 1qaz2wsx3edc<br>
+            <b>Создатель:</b> creator / 123<br>
+            <b>Сотрудник:</b> staff / 123<br>
+            <b>Стажёр:</b> intern / 123
+        </div>
+    </div>
+</div>
+
+<!-- ОСНОВНОЕ ПРИЛОЖЕНИЕ -->
+<div id="mainApp">
+    <header class="header">
+        <div class="header-logo">📰 TrP Казань-Томск</div>
+        <div class="header-user">
+            <span id="headerUserName">Пользователь</span>
+            <div class="avatar" id="headerAvatar">?</div>
+            <button class="logout-btn" onclick="doLogout()">Выйти</button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="nav-item active" data-page="news" onclick="showPage('news', this)">
+                <span class="icon">📰</span><span>Все новости</span>
+            </div>
+            <div class="nav-item" data-page="editor" onclick="showPage('editor', this)">
+                <span class="icon">✏️</span><span>Редактор</span>
+            </div>
+            <div class="nav-item" data-page="team" onclick="showPage('team', this)">
+                <span class="icon">👥</span><span>Команда</span>
+            </div>
+            <div class="nav-item" data-page="settings" onclick="showPage('settings', this)">
+                <span class="icon">⚙️</span><span>Настройки</span>
+            </div>
+        </aside>
+
+        <main class="content">
+            <!-- ВСЕ НОВОСТИ -->
+            <div class="page active" id="page-news">
+                <div class="page-header">
+                    <div>
+                        <h1>Все новости</h1>
+                        <p class="subtitle">Лента новостей команды</p>
+                    </div>
+                </div>
+                <div class="news-list" id="newsList"></div>
+            </div>
+
+            <!-- РЕДАКТОР -->
+            <div class="page" id="page-editor">
+                <div class="page-header">
+                    <div>
+                        <h1>Редактор новостей</h1>
+                        <p class="subtitle">Создание и управление публикациями</p>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="openAddNews()">+ Новая новость</button>
+                        <button class="btn btn-secondary" onclick="showExportCode()">📋 Код для Google Sites</button>
+                    </div>
+                </div>
+                <div class="news-list" id="editorNewsList"></div>
+            </div>
+
+            <!-- КОМАНДА -->
+            <div class="page" id="page-team">
+                <div class="page-header">
+                    <div>
+                        <h1>Команда</h1>
+                        <p class="subtitle">Участники проекта</p>
+                    </div>
+                </div>
+                <div class="card" id="teamList"></div>
+            </div>
+
+            <!-- НАСТРОЙКИ -->
+            <div class="page" id="page-settings">
+                <div class="page-header">
+                    <div>
+                        <h1>Настройки</h1>
+                        <p class="subtitle">Управление данными и доступом</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>💾 Резервное копирование</h2>
+                    <p style="font-size:14px;color:var(--muted);margin-bottom:14px;">Сохраните все новости и данные команды в файл.</p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="exportData()">⬇️ Скачать базу</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">⬆️ Загрузить базу</button>
+                        <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+                        <button class="btn btn-danger" onclick="resetAllData()">🗑️ Сбросить всё</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>👤 Текущий пользователь</h2>
+                    <div style="font-size:14px;line-height:1.8;color:#334155;">
+                        <p><b>Имя:</b> <span id="settingsName">—</span></p>
+                        <p><b>Роль:</b> <span id="settingsRole">—</span></p>
+                        <p><b>Логин:</b> <span id="settingsLogin">—</span></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: ДОБАВЛЕНИЕ НОВОСТИ -->
+<div class="modal-overlay" id="newsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Новая новость</h2>
+            <button class="modal-close" onclick="closeModal('newsModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Заголовок</label>
+                <input type="text" id="newsTitle" placeholder="Например: Запуск нового проекта">
+            </div>
+            <div class="form-group">
+                <label>Текст новости</label>
+                <textarea id="newsBody" placeholder="Подробности..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('newsModal')">Отмена</button>
+            <button class="btn btn-primary" onclick="saveNews()">Опубликовать</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: КОД ДЛЯ GOOGLE SITES -->
+<div class="modal-overlay" id="exportModal">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2>Код для Google Sites</h2>
+            <button class="modal-close" onclick="closeModal('exportModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">
+                Скопируйте этот код и вставьте на Google Sites через <b>Вставка → Встроить код</b>.
+            </p>
+            <div class="code-box" id="exportCodeBox"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="copyExportCode()">📋 Скопировать код</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast">Готово</div>
+
+<script>
+    // ============ ДАННЫЕ ============
+    const DB_KEY = 'trp_team_v1';
+
+    const defaultData = {
+        users: [
+            { login: 'admin', pass: '1qaz2wsx3edc', name: 'Владелец', role: 'owner' },
+            { login: 'creator', pass: '123', name: 'Создатель', role: 'creator' },
+            { login: 'staff', pass: '123', name: 'Сотрудник', role: 'staff' },
+            { login: 'intern', pass: '123', name: 'Стажёр', role: 'intern' }
+        ],
+        news: [
+            {
+                id: 'n1',
+                title: 'Добро пожаловать в TrP Казань-Томск!',
+                body: 'Это командный центр для управления новостями. Владельцы и Создатели могут публиковать новости, а Сотрудники и Стажёры — читать их.',
+                author: 'Владелец',
+                date: Date.now() - 86400000
+            }
+        ],
+        currentUser: null
+    };
+
+    let data = null;
+
+    // ============ ХРАНИЛИЩЕ ============
+    function load() {
+        try {
+            const raw = localStorage.getItem(DB_KEY);
+            if (raw) {
+                data = JSON.parse(raw);
+                if (!data.news) data.news = [];
+                if (!data.users) data.users = defaultData.users;
+                return;
+            }
+        } catch(e) {}
+        data = JSON.parse(JSON.stringify(defaultData));
+        save();
+    }
+
+    function save() {
+        try { localStorage.setItem(DB_KEY, JSON.stringify(data)); }
+        catch(e) { showToast('Ошибка сохранения', true); }
+    }
+
+    // ============ ВХОД ============
+    function doLogin() {
+        const login = document.getElementById('loginInput').value.trim();
+        const pass = document.getElementById('passInput').value.trim();
+        const user = data.users.find(u => u.login === login && u.pass === pass);
+        if (user) {
+            data.currentUser = user;
+            save();
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            initApp();
+        } else {
+            document.getElementById('errorMsg').textContent = '❌ Неверный логин или пароль';
+        }
+    }
+
+    function doLogout() {
+        data.currentUser = null;
+        save();
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+    }
+
+    // ============ ИНИЦИАЛИЗАЦИЯ ============
+    function initApp() {
+        const u = data.currentUser;
+        document.getElementById('headerUserName').textContent = u.name;
+        document.getElementById('headerAvatar').textContent = u.name.charAt(0).toUpperCase();
+        renderNews();
+        renderEditor();
+        renderTeam();
+        renderSettings();
+        applyPermissions();
+    }
+
+    function applyPermissions() {
+        const u = data.currentUser;
+        const isEditor = u.role === 'owner' || u.role === 'creator';
+        document.querySelectorAll('.nav-item[data-page="editor"]').forEach(el => {
+            el.style.display = isEditor ? 'flex' : 'none';
+        });
+        const editorPage = document.getElementById('page-editor');
+        if (!isEditor && editorPage.classList.contains('active')) {
+            showPage('news', document.querySelector('.nav-item[data-page="news"]'));
+        }
+    }
+
+    // ============ НАВИГАЦИЯ ============
+    function showPage(name, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + name).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (el) el.classList.add('active');
+        if (name === 'news') renderNews();
+        if (name === 'editor') renderEditor();
+        if (name === 'team') renderTeam();
+        if (name === 'settings') renderSettings();
+    }
+
+    // ============ НОВОСТИ ============
+    function renderNews() {
+        const list = document.getElementById('newsList');
+        const news = [...data.news].sort((a, b) => b.date - a.date);
+        if (news.length === 0) {
+            list.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--muted);">Пока нет новостей</div>';
+            return;
+        }
+        list.innerHTML = news.map(n => `
+            <div class="news-card">
+                <div class="news-header">
+                    <div class="news-title">${escapeHtml(n.title)}</div>
+                    <div class="news-meta">${n.author} · ${new Date(n.date).toLocaleDateString('ru-RU')}</div>
+                </div>
+                <div class="news-body">${escapeHtml(n.body)}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderEditor() {
+        const list = document.getElementById('editorNewsList');
+        const news = [...data.news].sort((a, b) => b.date - a.date);
+        if (news.length === 0) {
+            list.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--muted);">Нет новостей для редактирования</div>';
+            return;
+        }
+        list.innerHTML = news.map(n => `
+            <div class="news-card" style="border-left-color: var(--warning);">
+                <div class="news-header">
+                    <div class="news-title">${escapeHtml(n.title)}</div>
+                    <div class="news-meta">${n.author} · ${new Date(n.date).toLocaleDateString('ru-RU')}</div>
+                </div>
+                <div class="news-body">${escapeHtml(n.body)}</div>
+                <div class="news-actions">
+                    <button class="btn btn-danger btn-sm" onclick="deleteNews('${n.id}')">Удалить</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openAddNews() {
+        document.getElementById('newsTitle').value = '';
+        document.getElementById('newsBody').value = '';
+        document.getElementById('newsModal').classList.add('show');
+    }
+
+    function saveNews() {
+        const title = document.getElementById('newsTitle').value.trim();
+        const body = document.getElementById('newsBody').value.trim();
+        if (!title || !body) { showToast('Заполните все поля', true); return; }
+        data.news.push({
+            id: 'n_' + Date.now(),
+            title,
+            body,
+            author: data.currentUser.name,
+            date: Date.now()
+        });
+        save();
+        closeModal('newsModal');
+        renderNews();
+        renderEditor();
+        showToast('Новость опубликована');
+    }
+
+    function deleteNews(id) {
+        if (!confirm('Удалить новость?')) return;
+        data.news = data.news.filter(n => n.id !== id);
+        save();
+        renderNews();
+        renderEditor();
+        showToast('Новость удалена');
+    }
+
+    // ============ ЭКСПОРТ ДЛЯ GOOGLE SITES ============
+    function showExportCode() {
+        const news = [...data.news].sort((a, b) => b.date - a.date);
+        const items = news.map(n => `
+            <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #2563eb;font-family:sans-serif;">
+                <h3 style="margin:0 0 8px;font-size:17px;color:#1e293b;">${escapeHtml(n.title)}</h3>
+                <p style="margin:0 0 12px;font-size:12px;color:#64748b;">${escapeHtml(n.author)} · ${new Date(n.date).toLocaleDateString('ru-RU')}</p>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;white-space:pre-wrap;">${escapeHtml(n.body)}</p>
+            </div>
+        `).join('');
+
+        const code = `<div style="max-width:800px;margin:0 auto;">${items}</div>`;
+        document.getElementById('exportCodeBox').textContent = code;
+        document.getElementById('exportModal').classList.add('show');
+    }
+
+    function copyExportCode() {
+        const text = document.getElementById('exportCodeBox').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Код скопирован!');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Код скопирован!');
+        });
+    }
+
+    // ============ КОМАНДА ============
+    function renderTeam() {
+        const list = document.getElementById('teamList');
+        list.innerHTML = data.users.map(u => {
+            const initials = u.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            return `
+                <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #f1f5f9;">
+                    <div style="width:40px;height:40px;border-radius:50%;background:#dbeafe;color:#2563eb;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">${initials}</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;font-size:14px;">${u.name}</div>
+                        <div style="font-size:12px;color:var(--muted);">Логин: ${u.login}</div>
+                    </div>
+                    <span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${u.role === 'owner' ? '#fef3c7' : u.role === 'creator' ? '#dbeafe' : '#f1f5f9'};color:${u.role === 'owner' ? '#92400e' : u.role === 'creator' ? '#1e40af' : '#64748b'};">
+                        ${u.role === 'owner' ? 'Владелец' : u.role === 'creator' ? 'Создатель' : u.role === 'staff' ? 'Сотрудник' : 'Стажёр'}
+                    </span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ============ НАСТРОЙКИ ============
+    function renderSettings() {
+        const u = data.currentUser;
+        document.getElementById('settingsName').textContent = u.name;
+        document.getElementById('settingsRole').textContent = u.role === 'owner' ? 'Владелец' : u.role === 'creator' ? 'Создатель' : u.role === 'staff' ? 'Сотрудник' : 'Стажёр';
+        document.getElementById('settingsLogin').textContent = u.login;
+    }
+
+    // ============ ЭКСПОРТ/ИМПОРТ ============
+    function exportData() {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'trp_team_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        showToast('Файл скачан');
+    }
+
+    function importData(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const parsed = JSON.parse(ev.target.result);
+                if (parsed.users && parsed.news) {
+                    data = parsed;
+                    data.currentUser = null;
+                    save();
+                    showToast('Данные загружены. Войдите снова.');
+                    location.reload();
+                }
+            } catch(err) { showToast('Ошибка файла', true); }
+        };
+        reader.readAsText(file);
+    }
+
+    function resetAllData() {
+        if (!confirm('Удалить ВСЕ данные?')) return;
+        data = JSON.parse(JSON.stringify(defaultData));
+        data.currentUser = null;
+        save();
+        location.reload();
+    }
+
+    // ============ УТИЛИТЫ ============
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    function showToast(text, isError) {
+        const t = document.getElementById('toast');
+        t.textContent = text;
+        t.className = 'toast show' + (isError ? ' error' : '');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => { t.className = 'toast'; }, 2500);
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Enter для входа
+    document.getElementById('passInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') doLogin();
+    });
+    document.getElementById('loginInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') doLogin();
+    });
+
+    // Загрузка
+    load();
+</script>
+</body>
+</html>
