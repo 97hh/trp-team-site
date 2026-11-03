@@ -16,15 +16,8 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; transition: background 0.8s ease; overflow-x: hidden; }
-  
-  body.theme-kazan { 
-    background: linear-gradient(135deg, rgba(10, 15, 24, 0.95), rgba(10, 15, 24, 0.8)), 
-                url('https://images.unsplash.com/photo-1593940887481-06a3904d1a54?q=80&w=2070&auto=format&fit=crop') center/cover fixed; 
-  }
-  body.theme-tomsk { 
-    background: linear-gradient(135deg, rgba(10, 15, 24, 0.95), rgba(20, 15, 10, 0.85)), 
-                url('https://images.unsplash.com/photo-1600706316548-1cda85618e36?q=80&w=2070&auto=format&fit=crop') center/cover fixed; 
-  }
+  body.theme-kazan { background: linear-gradient(135deg, rgba(10, 15, 24, 0.95), rgba(10, 15, 24, 0.8)), url('https://images.unsplash.com/photo-1593940887481-06a3904d1a54?q=80&w=2070&auto=format&fit=crop') center/cover fixed; }
+  body.theme-tomsk { background: linear-gradient(135deg, rgba(10, 15, 24, 0.95), rgba(20, 15, 10, 0.85)), url('https://images.unsplash.com/photo-1600706316548-1cda85618e36?q=80&w=2070&auto=format&fit=crop') center/cover fixed; }
 
   #splash { position: fixed; inset: 0; background: #0a0f18; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
   #splash.hide { opacity: 0; visibility: hidden; }
@@ -139,6 +132,12 @@
   <div class="splash-text">Подключаемся к <span class="highlight">TrP Казано-Томск</span><span class="dots"></span></div>
 </div>
 
+<div id="siteClosedOverlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 50000; display: none; flex-direction: column; align-items: center; justify-content: center;">
+  <div style="font-size: 100px; animation: wobble 2s ease-in-out infinite; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.5));">🚧</div>
+  <h1 style="color: #ef4444; font-size: 32px; margin: 0 0 10px; letter-spacing: 2px; text-transform: uppercase;">Доступ закрыт</h1>
+  <p style="color: #9ca3af; margin-bottom: 20px;">Владелец закрыл сайт через Telegram.</p>
+</div>
+
 <div id="roleScreen">
   <h1>Портал управления</h1>
   <button class="btn-role" onclick="selectRole('editor')">✍️ Войти в систему<small>Доступ для сотрудников</small></button>
@@ -159,14 +158,13 @@
       <div class="clock-time" id="clockDisplay">00:00:00</div>
     </div>
     <div style="display: flex; gap: 10px;">
-      <!-- ТЕПЕРЬ КНОПКА ПЕРЕДАЕТ TRUE, ЧТОБЫ ПОКАЗАТЬ УВЕДОМЛЕНИЕ -->
       <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews(true)">🔄</button>
       <button id="btnFiles" class="ghost" style="display:none;" onclick="openFilesModal()">💾</button>
       <button id="btnExportSites" class="ghost" style="display:none;" onclick="openExportModal()">📋</button>
       <button id="btnTerminal" class="ghost" style="display:none; color:#10b981;" onclick="openTerminal()">🖥️</button>
       <button id="btnOrgPanel" class="ghost" style="display:none; color:#a855f7;">🏢</button>
-      <button id="btnCloseSite" class="ghost" style="display:none; color: #ef4444;">🔒</button>
-      <button id="btnOpenSite" class="ghost" style="display:none; color: #22c55e;">🔓</button>
+      <button id="btnCloseSite" class="ghost" style="display:none; color: #ef4444;" onclick="closeSiteByOwner()">🔒</button>
+      <button id="btnOpenSite" class="ghost" style="display:none; color: #22c55e;" onclick="openSiteByOwner()">🔓</button>
       <button id="btnAdminPanel" class="ghost" style="display:none;">👥</button>
       <button id="btnLogout" class="ghost" style="display:none;" onclick="logout()">Выйти</button>
     </div>
@@ -199,6 +197,7 @@
 
 <div id="toast">✅ Готово</div>
 
+<!-- МОДАЛКИ -->
 <div id="loginModal" class="modal">
   <div class="modal-box">
     <h2>Вход в систему</h2>
@@ -336,7 +335,7 @@ var state = {
       { name: 'creator', pass: '123', role: 'creator', city: 'all' },
       { name: 'staff', pass: '123', role: 'staff', city: 'kazan' }
     ],
-    feed_kazan: [], feed_tomsk: [], customCode: '', siteClosed: 'false', orgInfo: null, firingLog: []
+    feed_kazan: [], feed_tomsk: [], customCode: '', orgInfo: null, firingLog: []
   }
 };
 
@@ -369,7 +368,6 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 
-// ОБНОВЛЕННАЯ ФУНКЦИЯ: принимает isManual (true - показать уведомление, false - тихо)
 async function fetchCloudNews(isManual) {
   try {
     const res = await fetch(FIREBASE_URL + 'news.json');
@@ -380,16 +378,38 @@ async function fetchCloudNews(isManual) {
       state.db.feed_kazan = arr.filter(n => n.city === 'kazan').sort((a,b) => b.time - a.time);
       state.db.feed_tomsk = arr.filter(n => n.city === 'tomsk').sort((a,b) => b.time - a.time);
       renderFeed(); 
-      
-      // Показываем уведомление ТОЛЬКО если нажали кнопку
       if (isManual) showToast('✅ Новости обновлены');
-    } else {
-      if (isManual) showToast('Новостей пока нет');
     }
-  } catch(e) { 
-    console.error(e);
-    if (isManual) showToast('❌ Ошибка загрузки', true);
-  }
+  } catch(e) { console.error(e); }
+}
+
+// ПРОВЕРКА СТАТУСА САЙТА В ОБЛАКЕ
+async function checkSiteStatus() {
+  try {
+    const res = await fetch(FIREBASE_URL + 'siteClosed.json');
+    const isClosed = await res.json();
+    
+    if (isClosed === true) {
+      if (!state.isSiteClosed) {
+        state.isSiteClosed = true;
+        document.getElementById('siteClosedOverlay').style.display = 'flex';
+        document.getElementById('roleScreen').style.display = 'none';
+        document.getElementById('mainHeader').style.display = 'none';
+        document.getElementById('mainLayout').style.display = 'none';
+      }
+    } else {
+      if (state.isSiteClosed) {
+        state.isSiteClosed = false;
+        document.getElementById('siteClosedOverlay').style.display = 'none';
+        if (state.user) {
+          document.getElementById('mainHeader').style.display = 'flex';
+          document.getElementById('mainLayout').style.display = 'grid';
+        } else {
+          document.getElementById('roleScreen').style.display = 'flex';
+        }
+      }
+    }
+  } catch(e) {}
 }
 
 async function savePost(post) {
@@ -403,36 +423,46 @@ async function savePost(post) {
   } catch(e) { showToast('❌ Ошибка', true); }
 }
 
+// ЗАКРЫТИЕ И ОТКРЫТИЕ САЙТА ИЗ ПАНЕЛИ (ЗАПИСЬ В ОБЛАКО)
+async function closeSiteByOwner() {
+  if (state.user.role !== 'owner') return;
+  await fetch(FIREBASE_URL + 'siteClosed.json', { method: 'PUT', body: 'true' });
+  state.isSiteClosed = true;
+  document.getElementById('siteClosedOverlay').style.display = 'flex';
+}
+
+async function openSiteByOwner() {
+  if (state.user.role !== 'owner') return;
+  await fetch(FIREBASE_URL + 'siteClosed.json', { method: 'PUT', body: 'false' });
+  state.isSiteClosed = false;
+  document.getElementById('siteClosedOverlay').style.display = 'none';
+  showToast('Сайт открыт');
+}
+
 function hideSplash() {
   var s = $('splash');
   if (s) {
     s.classList.add('hide');
     setTimeout(function() {
       s.style.display = 'none';
-      var role = $('roleScreen');
-      if (role) role.style.display = 'flex';
+      if (!state.isSiteClosed) $('roleScreen').style.display = 'flex';
     }, 500);
   }
 }
 
 setTimeout(hideSplash, 1500);
+window.addEventListener('error', function() { setTimeout(hideSplash, 100); });
 
-window.addEventListener('error', function() {
-  setTimeout(hideSplash, 100);
-});
-
-try { loadLocal(); updateClock(); } catch(e) { console.error(e); }
-// Запускаем первый раз без уведомления
+try { loadLocal(); updateClock(); } catch(e) {}
 fetchCloudNews(false);
-// Запускаем автообновление каждые 5 сек тоже без уведомления
 setInterval(function() { fetchCloudNews(false); }, 5000);
 
-function logout() { if (confirm('Выйти?')) { try { sessionStorage.removeItem('ownerSessionActive'); } catch(e) {} location.reload(); } }
+// Запускаем проверку статуса сайта каждые 3 секунды
+checkSiteStatus();
+setInterval(checkSiteStatus, 3000);
 
-function selectRole(role) {
-  $('roleScreen').style.display = 'none';
-  $('loginModal').classList.add('show');
-}
+function logout() { if (confirm('Выйти?')) { try { sessionStorage.removeItem('ownerSessionActive'); } catch(e) {} location.reload(); } }
+function selectRole(role) { $('roleScreen').style.display = 'none'; $('loginModal').classList.add('show'); }
 
 $('btnLogin').onclick = function() {
   var name = $('loginName').value.trim().toLowerCase(); var pass = $('loginPass').value.trim();
@@ -452,9 +482,16 @@ function doLoginSuccess() {
   $('btnOrgPanel').style.display = isOwner ? 'inline-block' : 'none';
   $('btnTerminal').style.display = isOwner ? 'inline-block' : 'none'; 
   $('btnFiles').style.display = isOwner ? 'inline-block' : 'none'; 
+  if (isOwner) updateOwnerButtons(); else { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; }
   $('adminInput').disabled = false; $('btnSend').disabled = false; $('btnAsk').disabled = false; 
   state.city = (state.user.city === 'all') ? 'kazan' : state.user.city;
   switchTab(state.city);
+}
+
+function updateOwnerButtons() {
+  if (!state.user || state.user.role !== 'owner') { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; return; }
+  if (state.isSiteClosed) { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'inline-block'; }
+  else { $('btnCloseSite').style.display = 'inline-block'; $('btnOpenSite').style.display = 'none'; }
 }
 
 function switchTab(city) {
