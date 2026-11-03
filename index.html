@@ -16,7 +16,6 @@
   .dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
   @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
   
-  /* Экран входа */
   #roleScreen { position: fixed; inset: 0; background: #0f1115; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
   #roleScreen h1 { margin: 0 0 20px; font-size: 28px; color: #fff; }
   .btn-role { width: 280px; padding: 20px; font-size: 18px; border-radius: 12px; background: #151923; border: 2px solid #232838; color: #fff; cursor: pointer; transition: all 0.2s; text-align: center; font-weight: 600; }
@@ -108,6 +107,10 @@
   <div class="spacer"></div>
   <span class="who" id="who"></span>
   <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews()">🔄 Обновить</button>
+  
+  <!-- Кнопка файлов сайта -->
+  <button id="btnFiles" class="ghost" style="display:none; border-color:#f59e0b; color:#f59e0b;" onclick="openFilesModal()">💾 Файлы сайта</button>
+  
   <button id="btnExportSites" class="ghost" style="display:none; border-color:#38bdf8; color:#38bdf8;" onclick="openExportModal()">📋 Код для Google Sites</button>
   <button id="btnTerminal" class="ghost" style="display:none; border-color:#0f0; color:#0f0;" onclick="openTerminal()">🖥️ Терминал</button>
   <button id="btnOrgPanel" class="ghost" style="display:none; border-color:#a855f7; color:#a855f7;">🏢 Организация</button>
@@ -170,6 +173,25 @@
   </div>
 </div>
 
+<!-- МОДАЛКА ФАЙЛОВ САЙТА -->
+<div id="filesModal" class="modal">
+  <div class="modal-box" style="width: 500px;">
+    <h2>💾 Файлы сайта</h2>
+    <p style="font-size:13px; color:#9ca3af; margin-bottom:20px;">
+      Скачайте резервную копию базы (все новости, сотрудники, настройки). Если что-то сломается — вы сможете загрузить файл обратно.
+    </p>
+    
+    <div style="background:#0f1115; padding:15px; border-radius:8px; border:1px solid #232838; margin-bottom:15px;">
+      <button id="btnExport" class="ghost" style="width:100%; border-color:#22c55e; color:#22c55e; margin-bottom:10px;">⬇️ Скачать базу (JSON)</button>
+      <button id="btnImport" class="ghost" style="width:100%; border-color:#f59e0b; color:#f59e0b;">⬆️ Загрузить базу (JSON)</button>
+      <input type="file" id="fileInput" accept=".json" style="display:none;">
+    </div>
+
+    <button onclick="closeModal('filesModal')" class="ghost" style="width:100%;">Закрыть</button>
+  </div>
+</div>
+
+<!-- ОСТАЛЬНЫЕ МОДАЛКИ -->
 <div id="adminModal" class="modal">
   <div class="modal-box" style="width: 500px;">
     <h2>Управление командой</h2>
@@ -380,6 +402,7 @@ function doLoginSuccess() {
   $('btnAdminPanel').style.display = isOwner ? 'inline-block' : 'none';
   $('btnOrgPanel').style.display = isOwner ? 'inline-block' : 'none';
   $('btnTerminal').style.display = isOwner ? 'inline-block' : 'none'; 
+  $('btnFiles').style.display = isOwner ? 'inline-block' : 'none'; // Кнопка файлов
   $('tabs').style.display = isEditor ? 'flex' : 'none';
   
   if (isOwner) updateOwnerButtons(); else { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; }
@@ -423,11 +446,41 @@ $('btnSend').onclick = async function() {
   $('messages').lastChild.remove(); addMsg('✅ Опубликовано!', 'ai');
 };
 
+// ================= ФАЙЛЫ САЙТА =================
+function openFilesModal() { $('filesModal').classList.add('show'); }
+
+$('btnExport').onclick = function() {
+  var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.db, null, 2));
+  var dlAnchorElem = document.createElement('a');
+  dlAnchorElem.setAttribute("href", dataStr);
+  dlAnchorElem.setAttribute("download", "trp_site_backup.json");
+  dlAnchorElem.click();
+  showToast('Файл базы скачан!');
+};
+
+$('btnImport').onclick = function() { $('fileInput').click(); };
+$('fileInput').onchange = function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      if (parsed.users) {
+        state.db = parsed;
+        saveLocal();
+        alert('База успешно загружена! Страница перезагрузится.');
+        location.reload();
+      } else {
+        alert('Неверный формат файла.');
+      }
+    } catch(err) { alert('Ошибка чтения файла.'); }
+  };
+  reader.readAsText(file);
+};
+
 // ================= ТЕРМИНАЛ =================
-function openTerminal() {
-  $('terminalModal').classList.add('show');
-  $('terminalInput').focus();
-}
+function openTerminal() { $('terminalModal').classList.add('show'); $('terminalInput').focus(); }
 function handleTerminalEnter(e) { if (e.key === 'Enter') runUpdate(); }
 function printTerm(text, color) {
   var term = $('terminal'); var div = document.createElement('div');
