@@ -26,7 +26,6 @@
                 url('https://images.unsplash.com/photo-1600706316548-1cda85618e36?q=80&w=2070&auto=format&fit=crop') center/cover fixed; 
   }
 
-  /* ЗАГРУЗКА */
   #splash { position: fixed; inset: 0; background: #0a0f18; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
   #splash.hide { opacity: 0; visibility: hidden; }
   .loader-container { position: relative; width: 120px; height: 120px; margin-bottom: 30px; }
@@ -160,7 +159,8 @@
       <div class="clock-time" id="clockDisplay">00:00:00</div>
     </div>
     <div style="display: flex; gap: 10px;">
-      <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews()">🔄</button>
+      <!-- ТЕПЕРЬ КНОПКА ПЕРЕДАЕТ TRUE, ЧТОБЫ ПОКАЗАТЬ УВЕДОМЛЕНИЕ -->
+      <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews(true)">🔄</button>
       <button id="btnFiles" class="ghost" style="display:none;" onclick="openFilesModal()">💾</button>
       <button id="btnExportSites" class="ghost" style="display:none;" onclick="openExportModal()">📋</button>
       <button id="btnTerminal" class="ghost" style="display:none; color:#10b981;" onclick="openTerminal()">🖥️</button>
@@ -369,7 +369,8 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 
-async function fetchCloudNews() {
+// ОБНОВЛЕННАЯ ФУНКЦИЯ: принимает isManual (true - показать уведомление, false - тихо)
+async function fetchCloudNews(isManual) {
   try {
     const res = await fetch(FIREBASE_URL + 'news.json');
     if (!res.ok) throw new Error('Ошибка ' + res.status);
@@ -378,9 +379,17 @@ async function fetchCloudNews() {
       const arr = Object.values(data);
       state.db.feed_kazan = arr.filter(n => n.city === 'kazan').sort((a,b) => b.time - a.time);
       state.db.feed_tomsk = arr.filter(n => n.city === 'tomsk').sort((a,b) => b.time - a.time);
-      renderFeed(); showToast('✅ Новости обновлены');
+      renderFeed(); 
+      
+      // Показываем уведомление ТОЛЬКО если нажали кнопку
+      if (isManual) showToast('✅ Новости обновлены');
+    } else {
+      if (isManual) showToast('Новостей пока нет');
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { 
+    console.error(e);
+    if (isManual) showToast('❌ Ошибка загрузки', true);
+  }
 }
 
 async function savePost(post) {
@@ -394,7 +403,6 @@ async function savePost(post) {
   } catch(e) { showToast('❌ Ошибка', true); }
 }
 
-// КРИТИЧЕСКИ ВАЖНО: скрываем загрузку сразу, не ждем ничего
 function hideSplash() {
   var s = $('splash');
   if (s) {
@@ -407,18 +415,17 @@ function hideSplash() {
   }
 }
 
-// Запускаем через 1.5 секунды ГАРАНТИРОВАННО
 setTimeout(hideSplash, 1500);
 
-// И еще одна страховка — если что-то пошло не так
 window.addEventListener('error', function() {
   setTimeout(hideSplash, 100);
 });
 
-// Загрузка данных (без блокировки экрана)
 try { loadLocal(); updateClock(); } catch(e) { console.error(e); }
-fetchCloudNews();
-setInterval(fetchCloudNews, 5000);
+// Запускаем первый раз без уведомления
+fetchCloudNews(false);
+// Запускаем автообновление каждые 5 сек тоже без уведомления
+setInterval(function() { fetchCloudNews(false); }, 5000);
 
 function logout() { if (confirm('Выйти?')) { try { sessionStorage.removeItem('ownerSessionActive'); } catch(e) {} location.reload(); } }
 
