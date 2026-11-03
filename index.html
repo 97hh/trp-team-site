@@ -3,146 +3,221 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TrP Казань-Томск — Командный центр</title>
+<title>TrP Казано-Томск — Портал управления</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #0f1115; color: #e6e6e6; min-height: 100vh; display: flex; flex-direction: column; }
-  #splash { position: fixed; inset: 0; background: #0f1115; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s; }
+  :root {
+    --bg: #0a0f18;
+    --panel: rgba(20, 27, 40, 0.75);
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #ffffff;
+    --text-muted: #8b9bb4;
+    --accent: #3b82f6;
+    --tomsk-gold: #b45309;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Montserrat', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; transition: background 0.8s ease; overflow-x: hidden; }
+  
+  /* ТЕМА КАЗАНЬ (ФОТО КРЕМЛЯ) */
+  body.theme-kazan { 
+    background: linear-gradient(135deg, rgba(10, 15, 24, 0.95), rgba(10, 15, 24, 0.8)), 
+                url('https://images.unsplash.com/photo-1593940887481-06a3904d1a54?q=80&w=2070&auto=format&fit=crop') center/cover fixed; 
+  }
+  
+  /* ТЕМА ТОМСК (ФОТО АДМИНИСТРАЦИИ / ДЕРЕВЯННОГО ЗОДЧЕСТВА) */
+  body.theme-tomsk { 
+    background: linear-gradient(135deg, rgba(10, 15, 24, 0.95), rgba(20, 15, 10, 0.85)), 
+                url('https://images.unsplash.com/photo-1600706316548-1cda85618e36?q=80&w=2070&auto=format&fit=crop') center/cover fixed; 
+  }
+
+  /* ЗАГРУЗКА */
+  #splash { position: fixed; inset: 0; background: #0a0f18; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.8s ease; }
   #splash.hide { opacity: 0; visibility: hidden; }
-  .loader { width: 60px; height: 60px; border: 4px solid #232838; border-top-color: #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 24px; }
+  .loader-container { position: relative; width: 120px; height: 120px; margin-bottom: 30px; }
+  .loader-ring { position: absolute; inset: 0; border: 3px solid transparent; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+  .loader-ring:nth-child(2) { inset: 15px; border-top-color: #60a5fa; animation-direction: reverse; animation-duration: 1.5s; }
+  .loader-ring:nth-child(3) { inset: 30px; border-top-color: #93c5fd; animation-duration: 2s; }
   @keyframes spin { 100% { transform: rotate(360deg); } }
-  .splash-text { font-size: 20px; font-weight: 600; letter-spacing: 1px; display: flex; align-items: center; }
-  .highlight { color: #2563eb; margin-left: 8px; }
-  .dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+  .splash-text { font-size: 24px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+  .highlight { background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; color: var(--accent); }
   @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
+
+  /* ЭКРАН ВХОДА */
+  #roleScreen { position: fixed; inset: 0; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(10, 15, 24, 0.9); backdrop-filter: blur(10px); }
+  #roleScreen h1 { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 10px; }
+  .btn-role { width: 340px; padding: 24px; font-size: 18px; border-radius: 16px; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: all 0.3s; font-weight: 700; backdrop-filter: blur(10px); }
+  .btn-role:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(59,130,246,0.3); }
+  .btn-role small { display: block; font-size: 14px; color: var(--text-muted); margin-top: 8px; font-weight: 500; }
+
+  /* ШАПКА */
+  header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 40px; background: rgba(10, 15, 24, 0.6); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; flex-direction: column; gap: 5px; }
+  .header-greeting { font-size: 24px; font-weight: 800; background: linear-gradient(90deg, #fff, #cbd5e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header-date { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+  .header-center { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 14px; border: 1px solid var(--border); }
+  .tab { padding: 12px 30px; border-radius: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-weight: 700; font-size: 16px; transition: 0.3s; font-family: inherit; }
+  .tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .tab.active { background: var(--accent); color: #fff; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+  body.theme-tomsk .tab.active { background: var(--tomsk-gold); box-shadow: 0 4px 15px rgba(180,83,9,0.4); }
+
+  .header-right { display: flex; align-items: center; gap: 20px; }
+  .clock-widget { display: flex; flex-direction: column; align-items: flex-end; background: rgba(0,0,0,0.4); padding: 10px 20px; border-radius: 12px; border: 1px solid var(--border); }
+  .clock-city { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  .clock-time { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+  /* КНОПКИ */
+  button { font-family: inherit; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border); background: rgba(30, 41, 59, 0.6); color: #fff; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s; backdrop-filter: blur(5px); }
+  button:hover { background: rgba(51, 65, 85, 0.9); border-color: rgba(255,255,255,0.2); }
+  button.ghost { background: transparent; color: var(--text-muted); }
+  button.ghost:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn-primary:hover { background: #2563eb; box-shadow: 0 0 20px rgba(59,130,246,0.5); }
+  body.theme-tomsk .btn-primary { background: var(--tomsk-gold); border-color: var(--tomsk-gold); }
+
+  /* МАКЕТ */
+  .layout { display: grid; grid-template-columns: 1fr 420px; gap: 30px; padding: 30px 40px; flex: 1; max-width: 1700px; margin: 0 auto; width: 100%; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 30px; display: flex; flex-direction: column; backdrop-filter: blur(25px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+  #feed-header { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+  #feed-header h2 { font-size: 28px; font-weight: 800; }
+  body.theme-kazan #feed-header h2 { color: #60a5fa; }
+  body.theme-tomsk #feed-header h2 { color: #fbbf24; }
+
+  /* ЛЕНТА */
+  #feed { flex: 1; overflow-y: auto; padding-right: 10px; }
+  .post-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 16px; padding: 25px; margin-bottom: 20px; transition: all 0.3s; animation: slideIn 0.5s ease-out; border-left: 5px solid var(--accent); }
+  body.theme-tomsk .post-card { border-left-color: var(--tomsk-gold); }
+  .post-card:hover { transform: translateY(-3px); background: rgba(0,0,0,0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+  .post-card h3 { margin: 0 0 15px; font-size: 22px; font-weight: 700; color: #fff; }
+  .post-card p { margin: 0 0 20px; line-height: 1.7; color: #d1d5db; font-size: 16px; white-space: pre-wrap; }
+  .post-image { width: 100%; max-height: 350px; object-fit: cover; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+  .post-card .meta { font-size: 13px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+  .ai-badge { background: rgba(59,130,246,0.2); color: #93c5fd; padding: 5px 12px; border-radius: 30px; font-size: 12px; font-weight: 700; border: 1px solid rgba(59,130,246,0.3); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ЧАТ */
+  #chat { height: calc(100vh - 160px); }
+  #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; padding-right: 10px; }
+  .msg { max-width: 85%; padding: 16px 20px; border-radius: 20px; font-size: 15px; line-height: 1.5; white-space: pre-wrap; animation: popIn 0.3s ease-out; font-weight: 500; }
+  .msg.ai { background: rgba(30, 41, 59, 0.9); color: #e2e8f0; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+  .msg.admin { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 5px 15px rgba(59,130,246,0.4); }
+  body.theme-tomsk .msg.admin { background: var(--tomsk-gold); }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
   
-  #roleScreen { position: fixed; inset: 0; background: #0f1115; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-  #roleScreen h1 { margin: 0 0 20px; font-size: 28px; color: #fff; }
-  .btn-role { width: 280px; padding: 20px; font-size: 18px; border-radius: 12px; background: #151923; border: 2px solid #232838; color: #fff; cursor: pointer; transition: all 0.2s; text-align: center; font-weight: 600; }
-  .btn-role:hover { border-color: #2563eb; background: #1e293b; }
-  .btn-role small { display: block; font-size: 13px; color: #6b7280; margin-top: 5px; font-weight: normal; }
-  
-  header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #151923; border-bottom: 1px solid #232838; position: sticky; top: 0; z-index: 10; }
-  header h1 { font-size: 18px; margin: 0; white-space: nowrap; }
-  .tabs { display: flex; gap: 5px; margin-left: 10px; }
-  .tab { padding: 8px 16px; border-radius: 8px; background: transparent; border: 1px solid #232838; color: #9ca3af; cursor: pointer; font-weight: 600; }
-  .tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
-  .spacer { flex: 1; }
-  .who { font-size: 13px; color: #9ca3af; }
-  button { padding: 8px 12px; border-radius: 8px; border: 1px solid #2563eb; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-  button:hover { filter: brightness(1.1); }
-  button.ghost { background: transparent; border-color: #2a3142; color: #e6e6e6; }
-  .layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; padding: 16px; flex: 1; }
-  .card { background: #151923; border: 1px solid #232838; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
-  #feed-header { margin-bottom: 20px; border-bottom: 2px solid #232838; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-  #feed-header h2 { margin: 0; font-size: 24px; color: #fff; }
-  #feed { flex: 1; overflow-y: auto; }
-  .post-card { background: #0f1115; border: 1px solid #232838; border-radius: 10px; padding: 16px; margin-bottom: 12px; animation: slideIn .35s ease; }
-  .post-card h3 { margin: 0 0 10px; font-size: 18px; color: #fff; line-height: 1.3; }
-  .post-card p { margin: 0 0 12px; line-height: 1.6; color: #c9d1e0; font-size: 15px; white-space: pre-wrap; }
-  .post-card .meta { font-size: 12px; color: #6b7280; display: flex; justify-content: space-between; align-items: center; }
-  .post-card .ai-badge { background: #1e3a8a; color: #93c5fd; padding: 2px 8px; border-radius: 999px; font-size: 11px; }
-  @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } }
-  #chat { height: calc(100vh - 100px); }
-  #messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
-  .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; }
-  .msg.ai { background: #1e293b; color: #dbeafe; align-self: flex-start; }
-  .msg.admin { background: #2563eb; color: #fff; align-self: flex-end; }
-  .input-row { display: flex; gap: 8px; margin-top: 10px;}
-  textarea { flex: 1; resize: none; height: 44px; padding: 10px; background: #0f1115; color: #e6e6e6; border: 1px solid #2a3142; border-radius: 8px; font-family: inherit; }
-  #toast { position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 99999; }
-  #toast.show { transform: translateY(0); opacity: 1; }
-  #toast.error { background: #ef4444; }
-  label { display: block; font-size: 13px; color: #9ca3af; margin: 10px 0 4px; }
-  input, select { width: 100%; padding: 9px 10px; border-radius: 8px; font-size: 14px; background: #0f1115; color: #e6e6e6; border: 1px solid #2a3142; }
-  .modal { position: fixed; inset: 0; background: rgba(15,17,21,.95); display: none; align-items: center; justify-content: center; z-index: 100000; }
+  .input-row { display: flex; gap: 12px; margin-top: 10px; }
+  textarea, input[type="text"] { flex: 1; resize: none; padding: 16px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border); border-radius: 14px; font-family: inherit; font-size: 15px; outline: none; transition: 0.2s; }
+  textarea { height: 55px; }
+  textarea:focus, input[type="text"]:focus { border-color: var(--accent); background: rgba(0,0,0,0.6); }
+  input[type="text"]::placeholder, textarea::placeholder { color: var(--text-muted); }
+
+  /* МОДАЛКИ */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 100000; }
   .modal.show { display: flex; }
-  .modal-box { background: #151923; border: 1px solid #232838; border-radius: 14px; padding: 24px; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
-  .modal-box h2 { margin: 0 0 14px; font-size: 17px; }
-  .err { min-height: 18px; margin-top: 10px; font-size: 13px; color: #ef4444; text-align: center; }
-  #editorList { margin-top: 15px; max-height: 200px; overflow-y: auto; border-top: 1px solid #232838; }
-  .editor-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #232838; font-size: 14px; }
-  .role-badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #232838; color: #9ca3af; margin-left: 5px; }
-  .role-owner { background: #854d0e; color: #fef08a; }
-  .role-creator { background: #1e3a8a; color: #93c5fd; }
-  .code-box { background: #050505; color: #38bdf8; font-family: monospace; padding: 12px; border-radius: 8px; font-size: 12px; white-space: pre-wrap; word-break: break-all; max-height: 250px; overflow-y: auto; margin-top: 10px; border: 1px solid #232838; }
-  #siteClosedOverlay { position: fixed; inset: 0; background: rgba(10, 10, 15, 0.98); z-index: 50000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-  #siteClosedOverlay.show { display: flex; }
-  .warning-cone { font-size: 100px; animation: wobble 2s ease-in-out infinite; margin-bottom: 20px; filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.5)); }
-  @keyframes wobble { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
-  #siteClosedOverlay h1 { color: #ef4444; font-size: 32px; margin: 0 0 10px; letter-spacing: 2px; text-transform: uppercase; }
-  #ownerPromptBtn { display: none; opacity: 0; transform: translateY(20px); transition: all 0.8s; background: #151923; border: 2px solid #2563eb; color: #fff; padding: 15px 40px; font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); margin-top: 20px; }
-  #ownerPromptBtn.show { display: block; opacity: 1; transform: translateY(0); }
+  .modal-box { background: #111827; border: 1px solid var(--border); border-radius: 24px; padding: 35px; width: 460px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  .modal-box h2 { font-size: 24px; font-weight: 800; margin-bottom: 25px; color: #fff; }
   
-  #terminal { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 15px; border-radius: 8px; height: 200px; overflow-y: auto; font-size: 13px; border: 1px solid #333; margin-bottom: 10px; }
-  .term-input-row { display: flex; gap: 5px; }
-  .term-input-row input { background: #000; border: 1px solid #333; color: #0f0; font-family: monospace; }
+  label { display: block; font-size: 14px; color: var(--text-muted); margin: 15px 0 8px; font-weight: 600; }
+  input, select { width: 100%; padding: 14px 18px; border-radius: 12px; font-size: 15px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid var(--border); outline: none; transition: 0.2s; font-family: inherit; font-weight: 500; }
+  input:focus, select:focus { border-color: var(--accent); background: rgba(0,0,0,0.6); }
+  .err { color: #ef4444; font-size: 14px; text-align: center; margin-top: 15px; font-weight: 600; }
+
+  #editorList { margin-top: 15px; border-top: 1px solid var(--border); }
+  .editor-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 600; }
+  .role-badge { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: rgba(255,255,255,0.1); color: #fff; margin-left: 10px; font-weight: 700; }
+  .role-owner { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+  .role-creator { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+
+  #toast { position: fixed; bottom: 40px; right: 40px; background: #10b981; color: #fff; padding: 18px 30px; border-radius: 14px; font-weight: 700; font-size: 16px; box-shadow: 0 10px 30px rgba(16,185,129,0.4); transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99999; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 1fr; }
+    #chat { height: 500px; }
+    .header-center { display: none; }
+  }
 </style>
 </head>
-<body>
+<body class="theme-kazan">
 
+<!-- ЭКРАН ЗАГРУЗКИ -->
 <div id="splash">
-  <div class="loader"></div>
-  <div class="splash-text">Подключаемся к <span class="highlight">TrP Казань-Томск</span><span class="dots"></span></div>
+  <div class="loader-container">
+    <div class="loader-ring"></div>
+    <div class="loader-ring"></div>
+    <div class="loader-ring"></div>
+  </div>
+  <div class="splash-text">Подключаемся к <span class="highlight">TrP Казано-Томск</span><span class="dots"></span></div>
 </div>
 
-<div id="siteClosedOverlay">
-  <div class="warning-cone">🚧</div>
-  <h1>Доступ закрыт</h1>
-  <p style="color: #9ca3af; margin-bottom: 20px;">Технические работы.</p>
-  <button id="ownerPromptBtn">Вы владелец?</button>
-</div>
-
+<!-- ЭКРАН ВЫБОРА -->
 <div id="roleScreen">
-  <h1>Командный центр TrP</h1>
+  <h1>Портал управления</h1>
   <button class="btn-role" onclick="selectRole('editor')">✍️ Войти в систему<small>Доступ для сотрудников</small></button>
 </div>
 
-<header>
-  <h1>TrP News</h1>
-  <div class="tabs" id="tabs" style="display:none;">
-    <button class="tab active" data-city="kazan">Казань</button>
-    <button class="tab" data-city="tomsk">Томск</button>
+<!-- ШАПКА -->
+<header id="mainHeader" style="display: none;">
+  <div class="header-left">
+    <div class="header-greeting" id="greetingText">Добрый день!</div>
+    <div class="header-date" id="dateText">Сегодня</div>
   </div>
-  <div class="spacer"></div>
-  <span class="who" id="who"></span>
-  <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews()">🔄 Обновить</button>
-  
-  <!-- Кнопка файлов сайта -->
-  <button id="btnFiles" class="ghost" style="display:none; border-color:#f59e0b; color:#f59e0b;" onclick="openFilesModal()">💾 Файлы сайта</button>
-  
-  <button id="btnExportSites" class="ghost" style="display:none; border-color:#38bdf8; color:#38bdf8;" onclick="openExportModal()">📋 Код для Google Sites</button>
-  <button id="btnTerminal" class="ghost" style="display:none; border-color:#0f0; color:#0f0;" onclick="openTerminal()">🖥️ Терминал</button>
-  <button id="btnOrgPanel" class="ghost" style="display:none; border-color:#a855f7; color:#a855f7;">🏢 Организация</button>
-  <button id="btnCloseSite" class="ghost" style="display:none; border-color: #ef4444; color: #ef4444;">🔒 Закрыть</button>
-  <button id="btnOpenSite" class="ghost" style="display:none; border-color: #22c55e; color: #22c55e;">🔓 Открыть</button>
-  <button id="btnAdminPanel" class="ghost" style="display:none;">Пользователи</button>
-  <button id="btnLogout" class="ghost" style="display:none; border-color: #6b7280; color: #9ca3af;" onclick="logout()">Выйти</button>
+
+  <div class="header-center">
+    <button class="tab active" id="tab-kazan" data-city="kazan" onclick="switchTab('kazan')">Казань</button>
+    <button class="tab" id="tab-tomsk" data-city="tomsk" onclick="switchTab('tomsk')">Томск</button>
+  </div>
+
+  <div class="header-right">
+    <div class="clock-widget">
+      <div class="clock-city" id="clockCityLabel">Москва (МСК)</div>
+      <div class="clock-time" id="clockDisplay">00:00:00</div>
+    </div>
+    
+    <div style="display: flex; gap: 10px;">
+      <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews()">🔄</button>
+      <button id="btnFiles" class="ghost" style="display:none;" onclick="openFilesModal()">💾</button>
+      <button id="btnExportSites" class="ghost" style="display:none;" onclick="openExportModal()">📋</button>
+      <button id="btnTerminal" class="ghost" style="display:none; color:#10b981;" onclick="openTerminal()">🖥️</button>
+      <button id="btnOrgPanel" class="ghost" style="display:none; color:#a855f7;">🏢</button>
+      <button id="btnCloseSite" class="ghost" style="display:none; color: #ef4444;">🔒</button>
+      <button id="btnOpenSite" class="ghost" style="display:none; color: #22c55e;">🔓</button>
+      <button id="btnAdminPanel" class="ghost" style="display:none;">👥</button>
+      <button id="btnLogout" class="ghost" style="display:none;" onclick="logout()">Выйти</button>
+    </div>
+  </div>
 </header>
 
-<div class="layout" id="mainLayout">
+<!-- ОСНОВНОЙ МАКЕТ -->
+<div class="layout" id="mainLayout" style="display: none;">
   <section class="card">
     <div id="feed-header">
-      <div>
-        <h2 id="feedCityName">Новости</h2>
-        <p style="color: #6b7280; font-size: 14px; margin: 5px 0 0;">Последние события</p>
-      </div>
+      <h2 id="feedCityName">Новости Казани</h2>
     </div>
     <div id="feed"></div>
   </section>
 
   <section class="card" id="chat">
-    <h2 style="margin: 0 0 12px; font-size: 15px; color: #9ca3af; text-transform: uppercase;">ИИ-Редактор</h2>
+    <h2 style="margin: 0 0 20px; font-size: 16px; color: var(--text-muted); font-weight: 700;">ЧАТ РЕДАКТОРА</h2>
     <div id="messages"></div>
+    
     <div class="input-row">
-      <textarea id="adminInput" placeholder="Введите новость..." disabled></textarea>
-      <button id="btnSend" disabled>Отправить</button>
+      <input type="text" id="imageUrlInput" placeholder="Ссылка на фото (URL). Необязательно." style="margin-bottom: 0;">
+    </div>
+    
+    <div class="input-row">
+      <textarea id="adminInput" placeholder="Напишите новость..." disabled></textarea>
+      <button id="btnSend" class="btn-primary" style="width: 60px; font-size: 20px;" disabled>➤</button>
     </div>
     <div class="input-row">
       <button id="btnAsk" class="ghost" disabled style="flex:1">Спросить новости</button>
-      <button id="btnClearFeed" class="ghost" style="flex:1">Очистить ленту</button>
+      <button id="btnClearFeed" class="ghost" style="flex:1">Очистить</button>
     </div>
-    <div id="status" style="font-size: 13px; margin-top: 10px; color: #6b7280;">Ожидание входа</div>
   </section>
 </div>
 
@@ -151,136 +226,123 @@
 <!-- МОДАЛКИ -->
 <div id="loginModal" class="modal">
   <div class="modal-box">
-    <h2>Вход в командный центр</h2>
+    <h2>Вход в систему</h2>
     <label>Логин</label>
     <input id="loginName" type="text" placeholder="admin">
     <label>Пароль</label>
     <input id="loginPass" type="password" placeholder="••••••••">
-    <button id="btnLogin" style="width:100%; margin-top:16px">Войти</button>
+    <button id="btnLogin" class="btn-primary" style="width:100%; margin-top:25px; padding: 16px;">Войти</button>
     <div id="loginErr" class="err"></div>
   </div>
 </div>
 
 <div id="ownerLoginModal" class="modal">
-  <div class="modal-box" style="border-color: #ef4444;">
+  <div class="modal-box" style="border-color: rgba(239, 68, 68, 0.4);">
     <h2 style="color: #ef4444;">Авторизация Владельца</h2>
     <label>Логин</label>
     <input id="ownerLoginName" type="text" placeholder="admin">
     <label>Пароль</label>
     <input id="ownerLoginPass" type="password" placeholder="••••••••">
-    <button id="btnOwnerLogin" style="width:100%; margin-top:16px; background: #ef4444; border-color: #ef4444;">Войти как Владелец</button>
+    <button id="btnOwnerLogin" style="width:100%; margin-top:25px; padding: 16px; background: #ef4444; border-color: #ef4444;">Войти</button>
     <div id="ownerLoginErr" class="err"></div>
   </div>
 </div>
 
-<!-- МОДАЛКА ФАЙЛОВ САЙТА -->
 <div id="filesModal" class="modal">
-  <div class="modal-box" style="width: 500px;">
+  <div class="modal-box">
     <h2>💾 Файлы сайта</h2>
-    <p style="font-size:13px; color:#9ca3af; margin-bottom:20px;">
-      Скачайте резервную копию базы (все новости, сотрудники, настройки). Если что-то сломается — вы сможете загрузить файл обратно.
-    </p>
-    
-    <div style="background:#0f1115; padding:15px; border-radius:8px; border:1px solid #232838; margin-bottom:15px;">
-      <button id="btnExport" class="ghost" style="width:100%; border-color:#22c55e; color:#22c55e; margin-bottom:10px;">⬇️ Скачать базу (JSON)</button>
-      <button id="btnImport" class="ghost" style="width:100%; border-color:#f59e0b; color:#f59e0b;">⬆️ Загрузить базу (JSON)</button>
+    <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:16px; border:1px solid var(--border);">
+      <button id="btnExport" class="btn-primary" style="width:100%; margin-bottom:15px; background:#10b981; border-color:#10b981;">⬇️ Скачать базу (JSON)</button>
+      <button id="btnImport" style="width:100%; border-color:#f59e0b; color:#f59e0b;">⬆️ Загрузить базу (JSON)</button>
       <input type="file" id="fileInput" accept=".json" style="display:none;">
     </div>
-
-    <button onclick="closeModal('filesModal')" class="ghost" style="width:100%;">Закрыть</button>
+    <button onclick="closeModal('filesModal')" class="ghost" style="width:100%; margin-top:25px; padding: 14px;">Закрыть</button>
   </div>
 </div>
 
-<!-- ОСТАЛЬНЫЕ МОДАЛКИ -->
 <div id="adminModal" class="modal">
-  <div class="modal-box" style="width: 500px;">
-    <h2>Управление командой</h2>
-    <div style="background:#0f1115; padding:12px; border-radius:8px; border:1px solid #232838; margin-bottom:15px;">
-      <label style="margin-top:0;">Добавить пользователя</label>
-      <input id="newEditorName" type="text" placeholder="Имя / Логин" style="margin-bottom:8px;">
-      <input id="newEditorPass" type="text" placeholder="Пароль" style="margin-bottom:8px;">
-      <label style="margin-top:0;">Роль</label>
-      <select id="newEditorRole" style="margin-bottom:8px;">
+  <div class="modal-box">
+    <h2>👥 Управление командой</h2>
+    <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:16px; border:1px solid var(--border); margin-bottom:20px;">
+      <input id="newEditorName" type="text" placeholder="Имя / Логин" style="margin-bottom:15px;">
+      <input id="newEditorPass" type="text" placeholder="Пароль" style="margin-bottom:15px;">
+      <select id="newEditorRole" style="margin-bottom:15px;">
         <option value="creator">Создатель</option>
         <option value="staff">Сотрудник</option>
         <option value="intern">Стажёр</option>
         <option value="owner">Владелец</option>
       </select>
-      <label style="margin-top:0;">Студия</label>
-      <select id="newEditorCity" style="margin-bottom:8px;">
+      <select id="newEditorCity" style="margin-bottom:20px;">
         <option value="kazan">Казань</option>
         <option value="tomsk">Томск</option>
         <option value="all">Все города</option>
       </select>
-      <button id="btnAddEditor" style="width:100%;">Добавить</button>
+      <button id="btnAddEditor" class="btn-primary" style="width:100%;">Добавить</button>
       <div id="adminErr" class="err" style="text-align:left;"></div>
     </div>
     <label>Список пользователей</label>
     <div id="editorList"></div>
-    <button id="btnCloseAdmin" class="ghost" style="width:100%; margin-top:20px;">Закрыть</button>
+    <button id="btnCloseAdmin" class="ghost" style="width:100%; margin-top:25px; padding: 14px;">Закрыть</button>
   </div>
 </div>
 
 <div id="terminalModal" class="modal">
-  <div class="modal-box" style="width: 600px; background: #000; border-color: #333;">
-    <h2 style="color: #0f0; font-family: monospace;">>_ Системный терминал</h2>
-    <div id="terminal">
-      <div>Добро пожаловать в систему обновлений TrP.</div>
-      <div>Введите код обновления ниже...</div>
+  <div class="modal-box" style="background: #000; border-color: #10b981;">
+    <h2 style="color: #10b981; font-family: monospace;">>_ Терминал</h2>
+    <div id="terminal" style="background: #000; color: #10b981; font-family: 'Courier New', monospace; padding: 20px; border-radius: 12px; height: 250px; overflow-y: auto; font-size: 14px; border: 1px solid #064e3b; margin-bottom: 20px;"></div>
+    <div style="display: flex; gap: 10px;">
+      <input id="terminalInput" type="text" placeholder="Код (например: update_v1)" onkeypress="handleTerminalEnter(event)" style="background: #000; border: 1px solid #064e3b; color: #10b981; font-family: monospace;">
+      <button onclick="runUpdate()" style="background: #10b981; color: #000; border: none;">Выполнить</button>
     </div>
-    <div class="term-input-row">
-      <input id="terminalInput" type="text" placeholder="Введите код (например: update_v1)" onkeypress="handleTerminalEnter(event)">
-      <button onclick="runUpdate()" style="background: #0f0; color: #000;">Выполнить</button>
-    </div>
-    <button onclick="closeModal('terminalModal')" class="ghost" style="width:100%; margin-top:10px; color: #0f0; border-color: #333;">Закрыть</button>
+    <button onclick="closeModal('terminalModal')" class="ghost" style="width:100%; margin-top:20px; color: #10b981;">Закрыть</button>
   </div>
 </div>
 
 <div id="exportModal" class="modal">
-  <div class="modal-box" style="width: 600px;">
-    <h2>Экспорт на Google Sites</h2>
-    <p style="font-size:13px; color:#9ca3af;">Вставьте этот код на Google Sites через <b>Вставка → Встроить код</b>.</p>
-    <div class="code-box" id="exportCodeBox"></div>
-    <button onclick="copyExportCode()" style="width:100%; margin-top:15px; background:#38bdf8; border-color:#38bdf8; color:#000;">📋 Скопировать код</button>
-    <button onclick="closeModal('exportModal')" class="ghost" style="width:100%; margin-top:10px;">Закрыть</button>
+  <div class="modal-box" style="width: 700px;">
+    <h2>📋 Экспорт на Google Sites</h2>
+    <p style="font-size:15px; color:var(--text-muted); margin-bottom:20px;">Вставьте этот код на Google Sites через <b>Вставка → Встроить код</b>.</p>
+    <div class="code-box" id="exportCodeBox" style="background: #000; color: #38bdf8; font-family: monospace; padding: 20px; border-radius: 12px; font-size: 13px; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; border: 1px solid #1e293b;"></div>
+    <button onclick="copyExportCode()" class="btn-primary" style="width:100%; margin-top:25px;">Скопировать код</button>
+    <button onclick="closeModal('exportModal')" class="ghost" style="width:100%; margin-top:15px;">Закрыть</button>
   </div>
 </div>
 
 <div id="orgModal" class="modal">
-  <div class="modal-box" style="width: 550px;">
+  <div class="modal-box" style="width: 600px;">
     <h2>🏢 Управление организацией</h2>
-    <div id="orgWarning" style="text-align: center; padding: 30px; background: rgba(239, 68, 68, 0.1); border: 2px dashed #ef4444; border-radius: 12px; margin-bottom: 20px; display: none;">
-      <span style="font-size: 70px; display: block; margin-bottom: 10px;">❗</span>
-      <h3 style="color:#ef4444; margin:0 0 10px;">ВНИМАНИЕ</h3>
-      <p style="margin:0 0 20px; color:#c9d1e0; font-size:15px;">Организация не заполнена!</p>
-      <button onclick="showOrgForm()" style="width:100%; padding:15px; background:#ef4444; border:none;">Заполнить данные</button>
+    <div id="orgWarning" style="text-align: center; padding: 30px; background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.5); border-radius: 16px; margin-bottom: 25px; display: none;">
+      <span style="font-size: 60px; display: block; margin-bottom: 15px;">❗</span>
+      <h3 style="color:#ef4444; margin:0 0 15px; font-size:22px;">ВНИМАНИЕ</h3>
+      <p style="margin:0 0 20px; color:#e2e8f0; font-size:16px;">Организация не заполнена!</p>
+      <button onclick="showOrgForm()" class="btn-primary" style="width:100%; background:#ef4444; border-color:#ef4444;">Заполнить данные</button>
     </div>
-    <div id="orgForm" style="display: none; background:#0f1115; padding:15px; border-radius:8px; border:1px solid #232838; margin-bottom:20px;">
+    <div id="orgForm" style="display: none; background:rgba(0,0,0,0.3); padding:20px; border-radius:16px; border:1px solid var(--border); margin-bottom:25px;">
       <label>Название организации</label>
-      <input id="orgName" type="text" placeholder="Например: TrP Медиа" style="margin-bottom:10px;">
+      <input id="orgName" type="text" placeholder="Например: TrP Медиа" style="margin-bottom:15px;">
       <label>ИНН / Реквизиты</label>
-      <input id="orgINN" type="text" placeholder="1234567890" style="margin-bottom:15px;">
-      <button onclick="saveOrgInfo()" style="width:100%; background:#22c55e; border-color:#22c55e;">Сохранить</button>
+      <input id="orgINN" type="text" placeholder="1234567890" style="margin-bottom:20px;">
+      <button onclick="saveOrgInfo()" class="btn-primary" style="width:100%; background:#10b981; border-color:#10b981;">Сохранить</button>
     </div>
-    <div id="orgInfoDisplay" style="display: none; background:#0f1115; padding:15px; border-radius:8px; border:1px solid #232838; margin-bottom:20px;">
-      <p style="margin:0 0 5px; font-size:16px;"><b id="displayOrgName">—</b></p>
-      <p style="margin:0; font-size:13px; color:#6b7280;">ИНН: <span id="displayOrgINN">—</span></p>
+    <div id="orgInfoDisplay" style="display: none; background:rgba(0,0,0,0.3); padding:20px; border-radius:16px; border:1px solid var(--border); margin-bottom:25px;">
+      <p style="margin:0 0 8px; font-size:20px; font-weight:800;"><span id="displayOrgName">—</span></p>
+      <p style="margin:0; font-size:15px; color:var(--text-muted);">ИНН: <span id="displayOrgINN">—</span></p>
     </div>
     <div id="fireSection">
-      <h3 style="color:#ef4444; font-size:15px; margin: 0 0 10px; border-top:1px solid #232838; padding-top:15px;">Уволить сотрудника</h3>
-      <select id="fireEmpSelect" style="margin-bottom:8px;"></select>
-      <input id="fireReason" type="text" placeholder="Причина увольнения" style="margin-bottom:8px;">
-      <div style="display:flex; gap:10px; margin-bottom:10px;">
+      <h3 style="color:#ef4444; font-size:18px; margin: 0 0 20px; border-top:1px solid var(--border); padding-top:25px;">Уволить сотрудника</h3>
+      <select id="fireEmpSelect" style="margin-bottom:15px;"></select>
+      <input id="fireReason" type="text" placeholder="Причина увольнения" style="margin-bottom:15px;">
+      <div style="display:flex; gap:15px; margin-bottom:20px;">
         <div style="flex:1;"><label>Работал с</label><input id="fireDateFrom" type="date"></div>
         <div style="flex:1;"><label>По</label><input id="fireDateTo" type="date"></div>
       </div>
-      <button onclick="fireEmployee()" style="width:100%; background:#ef4444; border-color:#ef4444;">Уволить</button>
+      <button onclick="fireEmployee()" style="width:100%; background:#ef4444; border-color:#ef4444; padding:16px; font-size:16px;">Уволить</button>
     </div>
-    <div style="margin-top:20px; border-top:1px solid #232838; padding-top:15px;">
-      <h3 style="color:#9ca3af; font-size:15px; margin: 0 0 10px;">Журнал увольнений</h3>
-      <div id="firingLogList" style="max-height: 150px; overflow-y: auto;"></div>
+    <div style="margin-top:25px; border-top:1px solid var(--border); padding-top:25px;">
+      <h3 style="color:var(--text-muted); font-size:18px; margin: 0 0 15px;">Журнал увольнений</h3>
+      <div id="firingLogList" style="max-height: 200px; overflow-y: auto;"></div>
     </div>
-    <button id="btnCloseOrg" class="ghost" style="width:100%; margin-top:20px;">Закрыть</button>
+    <button id="btnCloseOrg" class="ghost" style="width:100%; margin-top:25px; padding: 14px;">Закрыть</button>
   </div>
 </div>
 
@@ -309,6 +371,30 @@ function loadLocal() {
   if (data) { try { var parsed = JSON.parse(data); if(parsed.users) state.db = parsed; } catch(e) {} }
 }
 function saveLocal() { if (storageEnabled) localStorage.setItem(DB_KEY, JSON.stringify(state.db)); }
+
+function updateClock() {
+  const isKazan = state.city === 'kazan';
+  const timeZone = isKazan ? 'Europe/Moscow' : 'Asia/Tomsk';
+  const cityLabel = isKazan ? 'Москва (МСК)' : 'Томск (МСК+4)';
+
+  const timeString = new Intl.DateTimeFormat('ru-RU', {
+    timeZone: timeZone, hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).format(new Date());
+
+  $('clockDisplay').textContent = timeString;
+  $('clockCityLabel').textContent = cityLabel;
+
+  const hours = new Date().getHours();
+  let greeting = 'Добрый день';
+  if (hours < 12) greeting = 'Доброе утро';
+  else if (hours >= 18) greeting = 'Добрый вечер';
+  
+  if (state.user) $('greetingText').textContent = `${greeting}, ${state.user.name}!`;
+
+  const dateString = new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  $('dateText').textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+}
+setInterval(updateClock, 1000);
 
 async function fetchCloudNews() {
   try {
@@ -340,44 +426,18 @@ window.addEventListener('load', function() {
   state.isSiteClosed = state.db.siteClosed === 'true';
   fetchCloudNews();
   setInterval(fetchCloudNews, 5000);
+  updateClock();
+  
   setTimeout(function() {
     $('splash').classList.add('hide');
     setTimeout(function() {
       $('splash').style.display = 'none';
-      if (state.isSiteClosed) {
-        if (sessionStorage.getItem('ownerSessionActive') !== 'true') showSiteClosedOverlay();
-        else $('roleScreen').style.display = 'flex';
-      } else { $('roleScreen').style.display = 'flex'; }
-    }, 600);
+      $('roleScreen').style.display = 'flex';
+    }, 800);
   }, 1500); 
 });
 
 function logout() { if (confirm('Выйти?')) { try { sessionStorage.removeItem('ownerSessionActive'); } catch(e) {} location.reload(); } }
-
-function showSiteClosedOverlay() {
-  $('siteClosedOverlay').classList.add('show'); $('roleScreen').style.display = 'none';
-  $('ownerPromptBtn').classList.remove('show');
-  setTimeout(function() { $('ownerPromptBtn').classList.add('show'); }, 5000);
-}
-
-$('btnCloseSite').onclick = function() { if (state.user.role !== 'owner') return; state.db.siteClosed = 'true'; saveLocal(); state.isSiteClosed = true; showSiteClosedOverlay(); };
-$('btnOpenSite').onclick = function() { if (state.user.role !== 'owner') return; state.db.siteClosed = 'false'; saveLocal(); state.isSiteClosed = false; $('siteClosedOverlay').classList.remove('show'); showToast('Доступ открыт'); updateOwnerButtons(); };
-
-$('ownerPromptBtn').onclick = function() { $('ownerLoginModal').classList.add('show'); $('ownerLoginErr').textContent = ''; $('ownerLoginName').value = ''; $('ownerLoginPass').value = ''; };
-$('btnOwnerLogin').onclick = function() {
-  var name = $('ownerLoginName').value.trim().toLowerCase(); var pass = $('ownerLoginPass').value.trim();
-  if (name === 'admin' && pass === '1qaz2wsx3edc') {
-    try { sessionStorage.setItem('ownerSessionActive', 'true'); } catch(e) {}
-    state.isSiteClosed = false; $('ownerLoginModal').classList.remove('show'); $('siteClosedOverlay').classList.remove('show');
-    state.user = state.db.users[0]; doLoginSuccess();
-  } else { $('ownerLoginErr').textContent = 'Доступ только для Владельца.'; }
-};
-
-function updateOwnerButtons() {
-  if (!state.user || state.user.role !== 'owner') { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; return; }
-  if (state.isSiteClosed) { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'inline-block'; }
-  else { $('btnCloseSite').style.display = 'inline-block'; $('btnOpenSite').style.display = 'none'; }
-}
 
 function selectRole(role) {
   $('roleScreen').style.display = 'none';
@@ -392,9 +452,11 @@ $('btnLogin').onclick = function() {
 
 function doLoginSuccess() {
   $('loginModal').classList.remove('show'); $('roleScreen').style.display = 'none';
-  var roleMap = { 'owner': 'Владелец', 'creator': 'Создатель', 'staff': 'Сотрудник', 'intern': 'Стажёр' };
-  $('who').textContent = state.user.name + ' (' + roleMap[state.user.role] + ')';
-  $('btnLogout').style.display = 'inline-block';
+  $('mainHeader').style.display = 'flex';
+  $('mainLayout').style.display = 'grid';
+  
+  updateClock();
+  
   var isEditor = state.user.role === 'owner' || state.user.role === 'creator';
   var isOwner = state.user.role === 'owner';
 
@@ -402,115 +464,112 @@ function doLoginSuccess() {
   $('btnAdminPanel').style.display = isOwner ? 'inline-block' : 'none';
   $('btnOrgPanel').style.display = isOwner ? 'inline-block' : 'none';
   $('btnTerminal').style.display = isOwner ? 'inline-block' : 'none'; 
-  $('btnFiles').style.display = isOwner ? 'inline-block' : 'none'; // Кнопка файлов
-  $('tabs').style.display = isEditor ? 'flex' : 'none';
+  $('btnFiles').style.display = isOwner ? 'inline-block' : 'none'; 
   
-  if (isOwner) updateOwnerButtons(); else { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; }
   $('adminInput').disabled = false; $('btnSend').disabled = false; $('btnAsk').disabled = false; 
   
   state.city = (state.user.city === 'all') ? 'kazan' : state.user.city;
   switchTab(state.city);
 }
 
-document.querySelectorAll('.tab').forEach(function(btn) {
-  btn.onclick = function() { document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); switchTab(btn.getAttribute('data-city')); };
-});
-
 function switchTab(city) {
-  state.city = city; $('feedCityName').textContent = 'Новости ' + (city === 'kazan' ? 'Казани' : 'Томска');
+  state.city = city; 
+  document.body.className = 'theme-' + city;
+  $('feedCityName').textContent = 'Новости ' + (city === 'kazan' ? 'Казани' : 'Томска');
   document.querySelectorAll('.tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-city') === city); });
   renderFeed();
+  updateClock();
   if (state.user && (state.user.role === 'owner' || state.user.role === 'creator')) initChat(city);
 }
+
+document.querySelectorAll('.tab').forEach(function(btn) {
+  btn.onclick = function() { switchTab(btn.getAttribute('data-city')); };
+});
 
 function renderFeed() {
   var feed = $('feed'); if (!feed) return;
   var posts = state.db['feed_' + state.city] || [];
-  if (!posts.length) { feed.innerHTML = '<div style="color:#6b7280; text-align:center; margin-top:50px;">Новостей пока нет...</div>'; return; }
+  if (!posts.length) { 
+    feed.innerHTML = '<div style="color:var(--text-muted); text-align:center; margin-top:50px; font-size:18px; font-weight:600;">Новостей пока нет...</div>'; 
+    return; 
+  }
   feed.innerHTML = '';
   posts.forEach(function(post) {
     var el = document.createElement('article'); el.className = 'post-card';
     var time = new Date(post.time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    el.innerHTML = '<h3>' + escapeHtml(post.title) + '</h3><p>' + escapeHtml(post.body) + '</p><div class="meta"><span>' + time + '</span>' + (post.ai ? '<span class="ai-badge">ИИ-обработка</span>' : '') + '</div>';
+    
+    var imgHtml = post.image ? `<img src="${escapeHtml(post.image)}" class="post-image" onerror="this.style.display='none'">` : '';
+
+    el.innerHTML = `
+      <h3>${escapeHtml(post.title)}</h3>
+      ${imgHtml}
+      <p>${escapeHtml(post.body)}</p>
+      <div class="meta"><span>${time}</span>${post.ai ? '<span class="ai-badge">ИИ-обработка</span>' : ''}</div>
+    `;
     feed.appendChild(el);
   });
 }
 
 function initChat(city) { $('messages').innerHTML = ''; addMsg('Привет! Напишите новость.', 'ai'); }
-function addMsg(text, side) { var el = document.createElement('div'); el.className = 'msg ' + side; el.textContent = text; $('messages').appendChild(el); $('messages').scrollTop = $('messages').scrollHeight; }
-$('btnAsk').onclick = function() { addMsg('Какие новости на сегодня?', 'ai'); };
+function addMsg(text, side) { 
+  var el = document.createElement('div'); el.className = 'msg ' + side; el.textContent = text; 
+  $('messages').appendChild(el); $('messages').scrollTop = $('messages').scrollHeight; 
+}
+
 $('btnSend').onclick = async function() {
-  var text = $('adminInput').value.trim(); if (!text) return;
-  $('adminInput').value = ''; addMsg(text, 'admin'); addMsg('⏳ Сохраняю...', 'ai');
-  await savePost({ title: 'Новость', body: text, ai: false });
-  $('messages').lastChild.remove(); addMsg('✅ Опубликовано!', 'ai');
+  var text = $('adminInput').value.trim(); 
+  var imgUrl = $('imageUrlInput').value.trim();
+  if (!text) return;
+  
+  $('adminInput').value = ''; 
+  $('imageUrlInput').value = ''; 
+  
+  addMsg(text, 'admin'); 
+  addMsg('⏳ Сохраняю...', 'ai');
+  
+  await savePost({ title: 'Новость', body: text, image: imgUrl, ai: false });
+  
+  $('messages').lastChild.remove(); 
+  addMsg('✅ Опубликовано!', 'ai');
 };
 
-// ================= ФАЙЛЫ САЙТА =================
 function openFilesModal() { $('filesModal').classList.add('show'); }
-
 $('btnExport').onclick = function() {
   var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.db, null, 2));
-  var dlAnchorElem = document.createElement('a');
-  dlAnchorElem.setAttribute("href", dataStr);
-  dlAnchorElem.setAttribute("download", "trp_site_backup.json");
-  dlAnchorElem.click();
-  showToast('Файл базы скачан!');
+  var dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", "trp_site_backup.json"); dlAnchorElem.click(); showToast('Файл скачан!');
 };
-
 $('btnImport').onclick = function() { $('fileInput').click(); };
 $('fileInput').onchange = function(e) {
-  var file = e.target.files[0];
-  if (!file) return;
+  var file = e.target.files[0]; if (!file) return;
   var reader = new FileReader();
   reader.onload = function(e) {
     try {
       var parsed = JSON.parse(e.target.result);
-      if (parsed.users) {
-        state.db = parsed;
-        saveLocal();
-        alert('База успешно загружена! Страница перезагрузится.');
-        location.reload();
-      } else {
-        alert('Неверный формат файла.');
-      }
+      if (parsed.users) { state.db = parsed; saveLocal(); alert('База загружена! Перезагрузка.'); location.reload(); }
+      else { alert('Неверный формат файла.'); }
     } catch(err) { alert('Ошибка чтения файла.'); }
   };
   reader.readAsText(file);
 };
 
-// ================= ТЕРМИНАЛ =================
 function openTerminal() { $('terminalModal').classList.add('show'); $('terminalInput').focus(); }
 function handleTerminalEnter(e) { if (e.key === 'Enter') runUpdate(); }
 function printTerm(text, color) {
   var term = $('terminal'); var div = document.createElement('div');
-  div.style.color = color || '#0f0'; div.textContent = text;
-  term.appendChild(div); term.scrollTop = term.scrollHeight;
+  div.style.color = color || '#10b981'; div.textContent = text; term.appendChild(div); term.scrollTop = term.scrollHeight;
 }
 async function runUpdate() {
-  var cmd = $('terminalInput').value.trim(); if (!cmd) return;
-  $('terminalInput').value = '';
+  var cmd = $('terminalInput').value.trim(); if (!cmd) return; $('terminalInput').value = '';
   printTerm('> Выполнение: ' + cmd);
-  
   if (cmd === 'update' || cmd.startsWith('update_')) {
-    printTerm('> Подключение к серверу обновлений TrP...', '#38bdf8');
-    await new Promise(r => setTimeout(r, 1000));
-    printTerm('> Загрузка пакетов... [===   ] 30%', '#38bdf8');
-    await new Promise(r => setTimeout(r, 1200));
-    printTerm('> Загрузка пакетов... [======   ] 60%', '#38bdf8');
-    await new Promise(r => setTimeout(r, 1200));
-    printTerm('> Распаковка... [==========] 100%', '#38bdf8');
-    await new Promise(r => setTimeout(r, 800));
-    printTerm('> Установка...', '#f59e0b');
-    await new Promise(r => setTimeout(r, 1000));
-    printTerm('✅ Обновление успешно применено! Перезагрузка...', '#22c55e');
-    setTimeout(() => { location.reload(); }, 2000);
-  } else {
-    printTerm('❌ Неизвестная команда. Попробуйте: update_v1', '#ef4444');
-  }
+    printTerm('> Подключение...', '#38bdf8'); await new Promise(r => setTimeout(r, 800));
+    printTerm('> Загрузка... [===   ] 30%', '#38bdf8'); await new Promise(r => setTimeout(r, 800));
+    printTerm('> Загрузка... [======   ] 60%', '#38bdf8'); await new Promise(r => setTimeout(r, 800));
+    printTerm('> Распаковка... [==========] 100%', '#38bdf8'); await new Promise(r => setTimeout(r, 600));
+    printTerm('✅ Обновление применено!', '#10b981'); setTimeout(() => { location.reload(); }, 1500);
+  } else { printTerm('❌ Неизвестная команда. Попробуйте: update_v1', '#ef4444'); }
 }
 
-// ================= ЭКСПОРТ И ОРГАНИЗАЦИЯ =================
 function openExportModal() { $('exportModal').classList.add('show'); }
 function copyExportCode() {
   var code = document.getElementById('exportCodeBox').textContent;
@@ -518,7 +577,6 @@ function copyExportCode() {
     var ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Скопировано!');
   });
 }
-
 $('btnAdminPanel').onclick = function() { $('adminModal').classList.add('show'); renderUsersList(); };
 $('btnCloseAdmin').onclick = function() { $('adminModal').classList.remove('show'); };
 function renderUsersList() {
@@ -539,7 +597,6 @@ $('btnAddEditor').onclick = function() {
   state.db.users.push({ name: name, pass: pass, role: role, city: role === 'owner' ? 'all' : city });
   saveLocal(); $('newEditorName').value = ''; $('newEditorPass').value = ''; $('adminErr').textContent = ''; renderUsersList(); showToast('Добавлен');
 };
-
 $('btnOrgPanel').onclick = function() { $('orgModal').classList.add('show'); renderOrgPanel(); };
 $('btnCloseOrg').onclick = function() { $('orgModal').classList.remove('show'); };
 function renderOrgPanel() {
@@ -550,12 +607,12 @@ function renderOrgPanel() {
     var opt = document.createElement('option'); opt.value = e.name; opt.textContent = e.name; select.appendChild(opt);
   });
   var logList = $('firingLogList');
-  if (state.db.firingLog.length === 0) logList.innerHTML = '<p style="color:#6b7280; font-size:13px;">Пусто</p>';
+  if (state.db.firingLog.length === 0) logList.innerHTML = '<p style="color:var(--text-muted); font-size:15px;">Пусто</p>';
   else {
     logList.innerHTML = '';
     state.db.firingLog.slice().reverse().forEach(function(log) {
-      var item = document.createElement('div'); item.className = 'fire-log-item'; item.style = "background:#0f1115; border:1px solid #232838; padding:10px; border-radius:8px; margin-bottom:8px; font-size:13px;";
-      item.innerHTML = `Уволен: <b>${log.empName}</b><br>Причина: ${log.reason}<br><span style="color:#6b7280; font-size:11px;">Уволил: ${log.firedBy}</span>`;
+      var item = document.createElement('div'); item.className = 'fire-log-item'; item.style = "background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin-bottom:10px; font-size:14px; border-left:3px solid #ef4444;";
+      item.innerHTML = `Уволен: <b>${log.empName}</b><br>Причина: ${log.reason}<br><span style="color:var(--text-muted); font-size:12px;">Уволил: ${log.firedBy}</span>`;
       logList.appendChild(item);
     });
   }
@@ -572,7 +629,7 @@ function fireEmployee() {
 }
 
 function closeModal(id) { $(id).classList.remove('show'); }
-function showToast(msg, isError) { var t = $('toast'); t.textContent = msg; t.className = 'toast show' + (isError ? ' error' : ''); setTimeout(function() { t.className = 'toast'; }, 4000); }
+function showToast(msg, isError) { var t = $('toast'); t.textContent = msg; t.style.background = isError ? '#ef4444' : '#10b981'; t.className = 'toast show'; setTimeout(function() { t.className = 'toast'; }, 4000); }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 </script>
 </body>
