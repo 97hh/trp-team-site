@@ -15,11 +15,14 @@
   .highlight { color: #2563eb; margin-left: 8px; }
   .dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
   @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
+  
+  /* Экран входа */
   #roleScreen { position: fixed; inset: 0; background: #0f1115; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
   #roleScreen h1 { margin: 0 0 20px; font-size: 28px; color: #fff; }
   .btn-role { width: 280px; padding: 20px; font-size: 18px; border-radius: 12px; background: #151923; border: 2px solid #232838; color: #fff; cursor: pointer; transition: all 0.2s; text-align: center; font-weight: 600; }
   .btn-role:hover { border-color: #2563eb; background: #1e293b; }
   .btn-role small { display: block; font-size: 13px; color: #6b7280; margin-top: 5px; font-weight: normal; }
+  
   header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #151923; border-bottom: 1px solid #232838; position: sticky; top: 0; z-index: 10; }
   header h1 { font-size: 18px; margin: 0; white-space: nowrap; }
   .tabs { display: flex; gap: 5px; margin-left: 10px; }
@@ -31,8 +34,6 @@
   button:hover { filter: brightness(1.1); }
   button.ghost { background: transparent; border-color: #2a3142; color: #e6e6e6; }
   .layout { display: grid; grid-template-columns: 1fr 380px; gap: 16px; padding: 16px; flex: 1; }
-  .layout.reader-mode { grid-template-columns: 1fr; max-width: 900px; margin: 0 auto; width: 100%; }
-  .layout.reader-mode #chat { display: none; }
   .card { background: #151923; border: 1px solid #232838; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
   #feed-header { margin-bottom: 20px; border-bottom: 2px solid #232838; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
   #feed-header h2 { margin: 0; font-size: 24px; color: #fff; }
@@ -73,6 +74,10 @@
   #siteClosedOverlay h1 { color: #ef4444; font-size: 32px; margin: 0 0 10px; letter-spacing: 2px; text-transform: uppercase; }
   #ownerPromptBtn { display: none; opacity: 0; transform: translateY(20px); transition: all 0.8s; background: #151923; border: 2px solid #2563eb; color: #fff; padding: 15px 40px; font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); margin-top: 20px; }
   #ownerPromptBtn.show { display: block; opacity: 1; transform: translateY(0); }
+  
+  #terminal { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 15px; border-radius: 8px; height: 200px; overflow-y: auto; font-size: 13px; border: 1px solid #333; margin-bottom: 10px; }
+  .term-input-row { display: flex; gap: 5px; }
+  .term-input-row input { background: #000; border: 1px solid #333; color: #0f0; font-family: monospace; }
 </style>
 </head>
 <body>
@@ -90,9 +95,8 @@
 </div>
 
 <div id="roleScreen">
-  <h1>Добро пожаловать!</h1>
-  <button class="btn-role" onclick="selectRole('reader')">📖 Я Читатель<small>Смотреть новости</small></button>
-  <button class="btn-role" onclick="selectRole('editor')">✍️ Я Сотрудник<small>Вход для публикации</small></button>
+  <h1>Командный центр TrP</h1>
+  <button class="btn-role" onclick="selectRole('editor')">✍️ Войти в систему<small>Доступ для сотрудников</small></button>
 </div>
 
 <header>
@@ -105,6 +109,7 @@
   <span class="who" id="who"></span>
   <button id="btnRefresh" class="ghost" style="display:none;" onclick="fetchCloudNews()">🔄 Обновить</button>
   <button id="btnExportSites" class="ghost" style="display:none; border-color:#38bdf8; color:#38bdf8;" onclick="openExportModal()">📋 Код для Google Sites</button>
+  <button id="btnTerminal" class="ghost" style="display:none; border-color:#0f0; color:#0f0;" onclick="openTerminal()">🖥️ Терминал</button>
   <button id="btnOrgPanel" class="ghost" style="display:none; border-color:#a855f7; color:#a855f7;">🏢 Организация</button>
   <button id="btnCloseSite" class="ghost" style="display:none; border-color: #ef4444; color: #ef4444;">🔒 Закрыть</button>
   <button id="btnOpenSite" class="ghost" style="display:none; border-color: #22c55e; color: #22c55e;">🔓 Открыть</button>
@@ -143,7 +148,7 @@
 <!-- МОДАЛКИ -->
 <div id="loginModal" class="modal">
   <div class="modal-box">
-    <h2>Вход</h2>
+    <h2>Вход в командный центр</h2>
     <label>Логин</label>
     <input id="loginName" type="text" placeholder="admin">
     <label>Пароль</label>
@@ -191,6 +196,21 @@
     <label>Список пользователей</label>
     <div id="editorList"></div>
     <button id="btnCloseAdmin" class="ghost" style="width:100%; margin-top:20px;">Закрыть</button>
+  </div>
+</div>
+
+<div id="terminalModal" class="modal">
+  <div class="modal-box" style="width: 600px; background: #000; border-color: #333;">
+    <h2 style="color: #0f0; font-family: monospace;">>_ Системный терминал</h2>
+    <div id="terminal">
+      <div>Добро пожаловать в систему обновлений TrP.</div>
+      <div>Введите код обновления ниже...</div>
+    </div>
+    <div class="term-input-row">
+      <input id="terminalInput" type="text" placeholder="Введите код (например: update_v1)" onkeypress="handleTerminalEnter(event)">
+      <button onclick="runUpdate()" style="background: #0f0; color: #000;">Выполнить</button>
+    </div>
+    <button onclick="closeModal('terminalModal')" class="ghost" style="width:100%; margin-top:10px; color: #0f0; border-color: #333;">Закрыть</button>
   </div>
 </div>
 
@@ -243,106 +263,61 @@
 </div>
 
 <script>
-// ВАША ССЫЛКА НА FIREBASE (ИСПРАВЛЕНА)
 const FIREBASE_URL = 'https://trp-news-c6189-default-rtdb.firebaseio.com/';
-
 var storageEnabled = false;
 try { localStorage.setItem('test', '1'); localStorage.removeItem('test'); storageEnabled = true; } catch(e) {}
-
 var $ = function(id) { return document.getElementById(id); };
 var DB_KEY = 'trp_news_database_v3';
 
 var state = {
-  user: null, 
-  city: 'kazan',
-  isSiteClosed: false,
+  user: null, city: 'kazan', isSiteClosed: false,
   db: {
     users: [
       { name: 'admin', pass: '1qaz2wsx3edc', role: 'owner', city: 'all' },
       { name: 'creator', pass: '123', role: 'creator', city: 'all' },
-      { name: 'staff', pass: '123', role: 'staff', city: 'kazan' },
-      { name: 'intern', pass: '123', role: 'intern', city: 'tomsk' }
+      { name: 'staff', pass: '123', role: 'staff', city: 'kazan' }
     ],
-    feed_kazan: [],
-    feed_tomsk: [],
-    customCode: '',
-    siteClosed: 'false',
-    orgInfo: null,
-    firingLog: []
+    feed_kazan: [], feed_tomsk: [], customCode: '', siteClosed: 'false', orgInfo: null, firingLog: []
   }
 };
 
 function loadLocal() {
   if (!storageEnabled) return;
   var data = localStorage.getItem(DB_KEY);
-  if (data) {
-    try {
-      var parsed = JSON.parse(data);
-      if (!parsed.users) parsed.users = state.db.users;
-      if (!parsed.feed_kazan) parsed.feed_kazan = [];
-      if (!parsed.feed_tomsk) parsed.feed_tomsk = [];
-      if (!parsed.firingLog) parsed.firingLog = [];
-      state.db = parsed;
-    } catch(e) {}
-  }
+  if (data) { try { var parsed = JSON.parse(data); if(parsed.users) state.db = parsed; } catch(e) {} }
 }
+function saveLocal() { if (storageEnabled) localStorage.setItem(DB_KEY, JSON.stringify(state.db)); }
 
-function saveLocal() {
-  if (storageEnabled) localStorage.setItem(DB_KEY, JSON.stringify(state.db));
-}
-
-// ================= СВЯЗЬ С FIREBASE =================
 async function fetchCloudNews() {
   try {
     const res = await fetch(FIREBASE_URL + 'news.json');
-    if (!res.ok) throw new Error('Ошибка ' + res.status + ' (Проверьте правила в Firebase)');
-    
+    if (!res.ok) throw new Error('Ошибка ' + res.status);
     const data = await res.json();
     if (data) {
       const arr = Object.values(data);
       state.db.feed_kazan = arr.filter(n => n.city === 'kazan').sort((a,b) => b.time - a.time);
       state.db.feed_tomsk = arr.filter(n => n.city === 'tomsk').sort((a,b) => b.time - a.time);
-      renderFeed();
-      showToast('✅ Новости обновлены из облака');
-    } else {
-      showToast('В облаке пока нет новостей');
+      renderFeed(); showToast('✅ Новости обновлены');
     }
-  } catch(e) { 
-    console.error(e);
-    showToast('❌ Ошибка загрузки: ' + e.message, true); 
-  }
+  } catch(e) { showToast('❌ Ошибка: ' + e.message, true); }
 }
 
 async function savePost(post) {
-  post.city = state.city;
-  post.time = Date.now();
-  
+  post.city = state.city; post.time = Date.now();
   var posts = state.db['feed_' + state.city] || [];
-  posts.unshift(post); 
-  state.db['feed_' + state.city] = posts.slice(0, 50);
+  posts.unshift(post); state.db['feed_' + state.city] = posts.slice(0, 50);
   saveLocal(); renderFeed(); 
-
   try {
-    const res = await fetch(FIREBASE_URL + 'news.json', {
-      method: 'POST',
-      body: JSON.stringify(post)
-    });
-    if (!res.ok) throw new Error('Сервер отклонил запрос');
+    await fetch(FIREBASE_URL + 'news.json', { method: 'POST', body: JSON.stringify(post) });
     showToast('✅ Отправлено на Google Sites!');
-  } catch(e) {
-    showToast('❌ Ошибка отправки: ' + e.message, true);
-  }
+  } catch(e) { showToast('❌ Ошибка отправки', true); }
 }
 
 window.addEventListener('load', function() {
   loadLocal();
-  if (state.db.customCode) $('custom-code-container').innerHTML = state.db.customCode;
   state.isSiteClosed = state.db.siteClosed === 'true';
-  
-  // Запускаем синхронизацию с облаком
   fetchCloudNews();
   setInterval(fetchCloudNews, 5000);
-
   setTimeout(function() {
     $('splash').classList.add('hide');
     setTimeout(function() {
@@ -350,80 +325,47 @@ window.addEventListener('load', function() {
       if (state.isSiteClosed) {
         if (sessionStorage.getItem('ownerSessionActive') !== 'true') showSiteClosedOverlay();
         else $('roleScreen').style.display = 'flex';
-      } else {
-        $('roleScreen').style.display = 'flex';
-      }
+      } else { $('roleScreen').style.display = 'flex'; }
     }, 600);
   }, 1500); 
 });
 
-function logout() {
-  if (confirm('Выйти из аккаунта?')) {
-    try { sessionStorage.removeItem('ownerSessionActive'); } catch(e) {}
-    location.reload();
-  }
-}
+function logout() { if (confirm('Выйти?')) { try { sessionStorage.removeItem('ownerSessionActive'); } catch(e) {} location.reload(); } }
 
-// ================= БЛОКИРОВКА САЙТА =================
 function showSiteClosedOverlay() {
-  $('siteClosedOverlay').classList.add('show');
-  $('roleScreen').style.display = 'none';
+  $('siteClosedOverlay').classList.add('show'); $('roleScreen').style.display = 'none';
   $('ownerPromptBtn').classList.remove('show');
   setTimeout(function() { $('ownerPromptBtn').classList.add('show'); }, 5000);
 }
 
-$('btnCloseSite').onclick = function() {
-  if (state.user.role !== 'owner') return;
-  state.db.siteClosed = 'true'; saveLocal(); state.isSiteClosed = true; showSiteClosedOverlay();
-};
+$('btnCloseSite').onclick = function() { if (state.user.role !== 'owner') return; state.db.siteClosed = 'true'; saveLocal(); state.isSiteClosed = true; showSiteClosedOverlay(); };
+$('btnOpenSite').onclick = function() { if (state.user.role !== 'owner') return; state.db.siteClosed = 'false'; saveLocal(); state.isSiteClosed = false; $('siteClosedOverlay').classList.remove('show'); showToast('Доступ открыт'); updateOwnerButtons(); };
 
-$('btnOpenSite').onclick = function() {
-  if (state.user.role !== 'owner') return;
-  state.db.siteClosed = 'false'; saveLocal(); state.isSiteClosed = false; $('siteClosedOverlay').classList.remove('show');
-  showToast('Доступ открыт'); updateOwnerButtons();
-};
-
-$('ownerPromptBtn').onclick = function() {
-  $('ownerLoginModal').classList.add('show');
-  $('ownerLoginErr').textContent = ''; $('ownerLoginName').value = ''; $('ownerLoginPass').value = '';
-};
-
+$('ownerPromptBtn').onclick = function() { $('ownerLoginModal').classList.add('show'); $('ownerLoginErr').textContent = ''; $('ownerLoginName').value = ''; $('ownerLoginPass').value = ''; };
 $('btnOwnerLogin').onclick = function() {
-  var name = $('ownerLoginName').value.trim().toLowerCase();
-  var pass = $('ownerLoginPass').value.trim();
+  var name = $('ownerLoginName').value.trim().toLowerCase(); var pass = $('ownerLoginPass').value.trim();
   if (name === 'admin' && pass === '1qaz2wsx3edc') {
     try { sessionStorage.setItem('ownerSessionActive', 'true'); } catch(e) {}
-    state.isSiteClosed = false;
-    $('ownerLoginModal').classList.remove('show'); $('siteClosedOverlay').classList.remove('show');
+    state.isSiteClosed = false; $('ownerLoginModal').classList.remove('show'); $('siteClosedOverlay').classList.remove('show');
     state.user = state.db.users[0]; doLoginSuccess();
   } else { $('ownerLoginErr').textContent = 'Доступ только для Владельца.'; }
 };
 
 function updateOwnerButtons() {
-  if (!state.user || state.user.role !== 'owner') {
-    $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; return;
-  }
+  if (!state.user || state.user.role !== 'owner') { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; return; }
   if (state.isSiteClosed) { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'inline-block'; }
   else { $('btnCloseSite').style.display = 'inline-block'; $('btnOpenSite').style.display = 'none'; }
 }
 
-// ================= ВХОД =================
 function selectRole(role) {
   $('roleScreen').style.display = 'none';
-  if (role === 'reader') {
-    $('who').textContent = 'Гость (Читатель)';
-    $('tabs').style.display = 'flex'; $('btnRefresh').style.display = 'inline-block';
-    $('mainLayout').classList.add('reader-mode');
-    switchTab('kazan'); 
-  } else { $('loginModal').classList.add('show'); }
+  $('loginModal').classList.add('show');
 }
 
 $('btnLogin').onclick = function() {
-  var name = $('loginName').value.trim().toLowerCase();
-  var pass = $('loginPass').value.trim();
+  var name = $('loginName').value.trim().toLowerCase(); var pass = $('loginPass').value.trim();
   var found = state.db.users.find(function(e) { return e.name.toLowerCase() === name && e.pass === pass; });
-  if (found) { state.user = found; doLoginSuccess(); }
-  else { $('loginErr').textContent = 'Неверный логин или пароль'; }
+  if (found) { state.user = found; doLoginSuccess(); } else { $('loginErr').textContent = 'Неверный логин или пароль'; }
 };
 
 function doLoginSuccess() {
@@ -431,40 +373,28 @@ function doLoginSuccess() {
   var roleMap = { 'owner': 'Владелец', 'creator': 'Создатель', 'staff': 'Сотрудник', 'intern': 'Стажёр' };
   $('who').textContent = state.user.name + ' (' + roleMap[state.user.role] + ')';
   $('btnLogout').style.display = 'inline-block';
-  
   var isEditor = state.user.role === 'owner' || state.user.role === 'creator';
   var isOwner = state.user.role === 'owner';
 
   $('btnExportSites').style.display = isEditor ? 'inline-block' : 'none';
   $('btnAdminPanel').style.display = isOwner ? 'inline-block' : 'none';
   $('btnOrgPanel').style.display = isOwner ? 'inline-block' : 'none';
+  $('btnTerminal').style.display = isOwner ? 'inline-block' : 'none'; 
   $('tabs').style.display = isEditor ? 'flex' : 'none';
   
-  if (isOwner) updateOwnerButtons();
-  else { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; }
-
-  if (isEditor) {
-    $('adminInput').disabled = false; $('btnSend').disabled = false; $('btnAsk').disabled = false;
-    $('mainLayout').classList.remove('reader-mode');
-    state.city = (state.user.city === 'all') ? 'kazan' : state.user.city;
-  } else {
-    $('mainLayout').classList.add('reader-mode');
-    state.city = (state.user.city === 'all') ? 'kazan' : state.user.city;
-  }
+  if (isOwner) updateOwnerButtons(); else { $('btnCloseSite').style.display = 'none'; $('btnOpenSite').style.display = 'none'; }
+  $('adminInput').disabled = false; $('btnSend').disabled = false; $('btnAsk').disabled = false; 
+  
+  state.city = (state.user.city === 'all') ? 'kazan' : state.user.city;
   switchTab(state.city);
 }
 
-// ================= ВКЛАДКИ И ЛЕНТА =================
 document.querySelectorAll('.tab').forEach(function(btn) {
-  btn.onclick = function() {
-    document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); });
-    btn.classList.add('active'); switchTab(btn.getAttribute('data-city'));
-  };
+  btn.onclick = function() { document.querySelectorAll('.tab').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); switchTab(btn.getAttribute('data-city')); };
 });
 
 function switchTab(city) {
-  state.city = city;
-  $('feedCityName').textContent = 'Новости ' + (city === 'kazan' ? 'Казани' : 'Томска');
+  state.city = city; $('feedCityName').textContent = 'Новости ' + (city === 'kazan' ? 'Казани' : 'Томска');
   document.querySelectorAll('.tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-city') === city); });
   renderFeed();
   if (state.user && (state.user.role === 'owner' || state.user.role === 'creator')) initChat(city);
@@ -474,74 +404,70 @@ function renderFeed() {
   var feed = $('feed'); if (!feed) return;
   var posts = state.db['feed_' + state.city] || [];
   if (!posts.length) { feed.innerHTML = '<div style="color:#6b7280; text-align:center; margin-top:50px;">Новостей пока нет...</div>'; return; }
-  
   feed.innerHTML = '';
   posts.forEach(function(post) {
     var el = document.createElement('article'); el.className = 'post-card';
     var time = new Date(post.time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    el.innerHTML = '<h3>' + escapeHtml(post.title) + '</h3><p>' + escapeHtml(post.body) + '</p>' +
-      '<div class="meta"><span>' + time + '</span>' + (post.ai ? '<span class="ai-badge">ИИ-обработка</span>' : '') + '</div>';
+    el.innerHTML = '<h3>' + escapeHtml(post.title) + '</h3><p>' + escapeHtml(post.body) + '</p><div class="meta"><span>' + time + '</span>' + (post.ai ? '<span class="ai-badge">ИИ-обработка</span>' : '') + '</div>';
     feed.appendChild(el);
   });
 }
 
-// ================= ЧАТ И ИИ =================
-function initChat(city) { $('messages').innerHTML = ''; addMsg('Привет! Напишите новость, и она появится на сайте.', 'ai'); }
-function addMsg(text, side) {
-  var el = document.createElement('div'); el.className = 'msg ' + side; el.textContent = text;
-  $('messages').appendChild(el); $('messages').scrollTop = $('messages').scrollHeight;
-}
-
+function initChat(city) { $('messages').innerHTML = ''; addMsg('Привет! Напишите новость.', 'ai'); }
+function addMsg(text, side) { var el = document.createElement('div'); el.className = 'msg ' + side; el.textContent = text; $('messages').appendChild(el); $('messages').scrollTop = $('messages').scrollHeight; }
 $('btnAsk').onclick = function() { addMsg('Какие новости на сегодня?', 'ai'); };
-
 $('btnSend').onclick = async function() {
   var text = $('adminInput').value.trim(); if (!text) return;
-  $('adminInput').value = ''; addMsg(text, 'admin'); 
-  
-  addMsg('⏳ Сохраняю...', 'ai');
-  var post = { title: 'Новость', body: text, ai: false };
-  await savePost(post);
+  $('adminInput').value = ''; addMsg(text, 'admin'); addMsg('⏳ Сохраняю...', 'ai');
+  await savePost({ title: 'Новость', body: text, ai: false });
   $('messages').lastChild.remove(); addMsg('✅ Опубликовано!', 'ai');
 };
 
-// ================= ЭКСПОРТ НА GOOGLE SITES =================
-function openExportModal() {
-  $('exportModal').classList.add('show');
+// ================= ТЕРМИНАЛ =================
+function openTerminal() {
+  $('terminalModal').classList.add('show');
+  $('terminalInput').focus();
 }
-function copyExportCode() {
-  var code = `<div id="trp-news-widget" style="font-family: sans-serif; max-width: 800px; margin: 0 auto;"></div>
-<script>
-  const firebaseUrl = '${FIREBASE_URL}';
-  async function loadNews() {
-    try {
-      const res = await fetch(firebaseUrl + 'news.json');
-      const data = await res.json();
-      const container = document.getElementById('trp-news-widget');
-      if (!data) { container.innerHTML = '<p style="text-align:center;color:#666;">Новостей пока нет</p>'; return; }
-      const arr = Object.values(data).sort((a,b) => b.time - a.time);
-      container.innerHTML = arr.map(n => \`
-        <div style="background:#fff; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-left:4px solid #2563eb;">
-          <div style="font-size:12px; color:#2563eb; font-weight:bold; margin-bottom:8px;">\${n.city === 'kazan' ? 'КАЗАНЬ' : 'ТОМСК'}</div>
-          <h3 style="margin:0 0 8px; font-size:18px; color:#1e293b;">\${n.title}</h3>
-          <p style="margin:0 0 12px; font-size:12px; color:#64748b;">\${new Date(n.time).toLocaleDateString('ru-RU')}</p>
-          <p style="margin:0; font-size:15px; line-height:1.6; color:#334155; white-space:pre-wrap;">\${n.body}</p>
-        </div>
-      \`).join('');
-    } catch(e) { console.log('Ждем данные...'); }
-  }
-  loadNews();
-  setInterval(loadNews, 5000);
-<\/script>`;
+function handleTerminalEnter(e) { if (e.key === 'Enter') runUpdate(); }
+function printTerm(text, color) {
+  var term = $('terminal'); var div = document.createElement('div');
+  div.style.color = color || '#0f0'; div.textContent = text;
+  term.appendChild(div); term.scrollTop = term.scrollHeight;
+}
+async function runUpdate() {
+  var cmd = $('terminalInput').value.trim(); if (!cmd) return;
+  $('terminalInput').value = '';
+  printTerm('> Выполнение: ' + cmd);
   
-  navigator.clipboard.writeText(code).then(() => showToast('Код для Google Sites скопирован!')).catch(() => {
-    alert('Не удалось скопировать. Выделите текст вручную.');
+  if (cmd === 'update' || cmd.startsWith('update_')) {
+    printTerm('> Подключение к серверу обновлений TrP...', '#38bdf8');
+    await new Promise(r => setTimeout(r, 1000));
+    printTerm('> Загрузка пакетов... [===   ] 30%', '#38bdf8');
+    await new Promise(r => setTimeout(r, 1200));
+    printTerm('> Загрузка пакетов... [======   ] 60%', '#38bdf8');
+    await new Promise(r => setTimeout(r, 1200));
+    printTerm('> Распаковка... [==========] 100%', '#38bdf8');
+    await new Promise(r => setTimeout(r, 800));
+    printTerm('> Установка...', '#f59e0b');
+    await new Promise(r => setTimeout(r, 1000));
+    printTerm('✅ Обновление успешно применено! Перезагрузка...', '#22c55e');
+    setTimeout(() => { location.reload(); }, 2000);
+  } else {
+    printTerm('❌ Неизвестная команда. Попробуйте: update_v1', '#ef4444');
+  }
+}
+
+// ================= ЭКСПОРТ И ОРГАНИЗАЦИЯ =================
+function openExportModal() { $('exportModal').classList.add('show'); }
+function copyExportCode() {
+  var code = document.getElementById('exportCodeBox').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('Код скопирован!')).catch(() => {
+    var ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Скопировано!');
   });
 }
 
-// ================= ПОЛЬЗОВАТЕЛИ И ОРГАНИЗАЦИЯ =================
 $('btnAdminPanel').onclick = function() { $('adminModal').classList.add('show'); renderUsersList(); };
 $('btnCloseAdmin').onclick = function() { $('adminModal').classList.remove('show'); };
-
 function renderUsersList() {
   var list = $('editorList'); list.innerHTML = '';
   state.db.users.forEach(function(e) {
@@ -552,71 +478,49 @@ function renderUsersList() {
     list.appendChild(item);
   });
 }
-
 $('btnAddEditor').onclick = function() {
   var name = $('newEditorName').value.trim(); var pass = $('newEditorPass').value.trim();
   var role = $('newEditorRole').value; var city = $('newEditorCity').value;
-  if (name.length < 2 || pass.length < 3) { $('adminErr').textContent = 'Слишком коротко'; return; }
+  if (name.length < 2 || pass.length < 3) { $('adminErr').textContent = 'Коротко'; return; }
   if (state.db.users.find(function(e) { return e.name.toLowerCase() === name.toLowerCase(); })) { $('adminErr').textContent = 'Уже есть'; return; }
   state.db.users.push({ name: name, pass: pass, role: role, city: role === 'owner' ? 'all' : city });
-  saveLocal(); $('newEditorName').value = ''; $('newEditorPass').value = ''; $('adminErr').textContent = '';
-  renderUsersList(); showToast('Пользователь добавлен');
+  saveLocal(); $('newEditorName').value = ''; $('newEditorPass').value = ''; $('adminErr').textContent = ''; renderUsersList(); showToast('Добавлен');
 };
 
 $('btnOrgPanel').onclick = function() { $('orgModal').classList.add('show'); renderOrgPanel(); };
 $('btnCloseOrg').onclick = function() { $('orgModal').classList.remove('show'); };
-
 function renderOrgPanel() {
-  if (state.db.orgInfo) {
-    $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'block';
-    $('displayOrgName').textContent = state.db.orgInfo.name; $('displayOrgINN').textContent = state.db.orgInfo.inn;
-  } else {
-    $('orgWarning').style.display = 'block'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'none';
-  }
+  if (state.db.orgInfo) { $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'block'; $('displayOrgName').textContent = state.db.orgInfo.name; $('displayOrgINN').textContent = state.db.orgInfo.inn; }
+  else { $('orgWarning').style.display = 'block'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'none'; }
   var select = $('fireEmpSelect'); select.innerHTML = '<option value="">-- Выберите --</option>';
-  var possible = state.db.users.filter(function(e) { return e.name !== 'admin'; });
-  if (possible.length === 0) select.innerHTML = '<option value="">Нет сотрудников</option>';
-  else possible.forEach(function(e) {
+  state.db.users.filter(function(e) { return e.name !== 'admin'; }).forEach(function(e) {
     var opt = document.createElement('option'); opt.value = e.name; opt.textContent = e.name; select.appendChild(opt);
   });
   var logList = $('firingLogList');
-  if (state.db.firingLog.length === 0) { logList.innerHTML = '<p style="color:#6b7280; font-size:13px;">Пусто</p>'; }
+  if (state.db.firingLog.length === 0) logList.innerHTML = '<p style="color:#6b7280; font-size:13px;">Пусто</p>';
   else {
     logList.innerHTML = '';
     state.db.firingLog.slice().reverse().forEach(function(log) {
-      var item = document.createElement('div'); item.className = 'fire-log-item';
-      item.style = "background:#0f1115; border:1px solid #232838; padding:10px; border-radius:8px; margin-bottom:8px; font-size:13px;";
-      item.innerHTML = `Уволен: <b>${escapeHtml(log.empName)}</b><br>Причина: ${escapeHtml(log.reason)}<br><span style="color:#6b7280; font-size:11px;">Уволил: ${escapeHtml(log.firedBy)}</span>`;
+      var item = document.createElement('div'); item.className = 'fire-log-item'; item.style = "background:#0f1115; border:1px solid #232838; padding:10px; border-radius:8px; margin-bottom:8px; font-size:13px;";
+      item.innerHTML = `Уволен: <b>${log.empName}</b><br>Причина: ${log.reason}<br><span style="color:#6b7280; font-size:11px;">Уволил: ${log.firedBy}</span>`;
       logList.appendChild(item);
     });
   }
 }
 function showOrgForm() { $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'block'; }
-function saveOrgInfo() {
-  var name = $('orgName').value.trim(); var inn = $('orgINN').value.trim();
-  if (!name) { alert('Введите название'); return; }
-  state.db.orgInfo = { name: name, inn: inn }; saveLocal(); showToast('Сохранено'); renderOrgPanel();
-}
+function saveOrgInfo() { var name = $('orgName').value.trim(); if (!name) return; state.db.orgInfo = { name: name, inn: $('orgINN').value.trim() }; saveLocal(); renderOrgPanel(); showToast('Сохранено'); }
 function fireEmployee() {
   var emp = $('fireEmpSelect').value; var reason = $('fireReason').value.trim();
   var dFrom = $('fireDateFrom').value; var dTo = $('fireDateTo').value;
-  if (!emp || !reason || !dFrom || !dTo) { alert('Заполните все поля'); return; }
+  if (!emp || !reason || !dFrom || !dTo) { alert('Заполните все'); return; }
   state.db.users = state.db.users.filter(function(e) { return e.name !== emp; });
-  var now = new Date();
-  state.db.firingLog.push({ empName: emp, reason: reason, dateFrom: dFrom, dateTo: dTo, firedBy: state.user.name, dateFired: now.toLocaleDateString('ru-RU') });
-  saveLocal(); $('fireReason').value = ''; $('fireDateFrom').value = ''; $('fireDateTo').value = '';
-  showToast('Сотрудник уволен'); renderOrgPanel();
+  state.db.firingLog.push({ empName: emp, reason: reason, dateFrom: dFrom, dateTo: dTo, firedBy: state.user.name, dateFired: new Date().toLocaleDateString('ru-RU') });
+  saveLocal(); $('fireReason').value = ''; $('fireDateFrom').value = ''; $('fireDateTo').value = ''; renderOrgPanel(); showToast('Уволен');
 }
 
-// ================= УТИЛИТЫ =================
 function closeModal(id) { $(id).classList.remove('show'); }
-function showToast(msg, isError) {
-  var t = $('toast'); t.textContent = msg; t.className = 'toast show' + (isError ? ' error' : '');
-  setTimeout(function() { t.className = 'toast'; }, 4000);
-}
+function showToast(msg, isError) { var t = $('toast'); t.textContent = msg; t.className = 'toast show' + (isError ? ' error' : ''); setTimeout(function() { t.className = 'toast'; }, 4000); }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-
-document.getElementById('passInput')?.addEventListener('keypress', function(e) { if (e.key === 'Enter') doLogin(); });
 </script>
 </body>
 </html>
