@@ -162,7 +162,7 @@
       <button id="btnFiles" class="ghost" style="display:none;" onclick="openFilesModal()">💾</button>
       <button id="btnExportSites" class="ghost" style="display:none;" onclick="openExportModal()">📋</button>
       <button id="btnTerminal" class="ghost" style="display:none; color:#10b981;" onclick="openTerminal()">🖥️</button>
-      <button id="btnOrgPanel" class="ghost" style="display:none; color:#a855f7;">🏢</button>
+      <button id="btnOrgPanel" class="ghost" style="display:none; color:#a855f7;" onclick="openOrgModal()">🏢</button>
       <button id="btnCloseSite" class="ghost" style="display:none; color: #ef4444;" onclick="closeSiteByOwner()">🔒</button>
       <button id="btnOpenSite" class="ghost" style="display:none; color: #22c55e;" onclick="openSiteByOwner()">🔓</button>
       <button id="btnAdminPanel" class="ghost" style="display:none;">👥</button>
@@ -383,7 +383,7 @@ async function fetchCloudNews(isManual) {
   } catch(e) { console.error(e); }
 }
 
-// ПРОВЕРКА СТАТУСА САЙТА В ОБЛАКЕ
+// ПРОВЕРКА СТАТУСА САЙТА, ОРГАНИЗАЦИИ И УВОЛЬНЕНИЙ
 async function checkSiteStatus() {
   try {
     const res = await fetch(FIREBASE_URL + 'siteClosed.json');
@@ -409,6 +409,31 @@ async function checkSiteStatus() {
         }
       }
     }
+
+    // 🆕 Синхронизация Организации
+    const orgRes = await fetch(FIREBASE_URL + 'orgInfo.json');
+    const orgData = await orgRes.json();
+    if (orgData && orgData.name) {
+      state.db.orgInfo = orgData;
+      if ($('orgModal').classList.contains('show')) {
+        $('orgWarning').style.display = 'none';
+        $('orgForm').style.display = 'none';
+        $('orgInfoDisplay').style.display = 'block';
+        $('displayOrgName').textContent = orgData.name;
+        $('displayOrgINN').textContent = orgData.inn;
+      }
+    }
+
+    // 🆕 Синхронизация Журнала увольнений
+    const logRes = await fetch(FIREBASE_URL + 'firingLog.json');
+    const logData = await logRes.json();
+    if (logData) {
+      state.db.firingLog = Object.values(logData).sort((a,b) => b.time - a.time);
+      if ($('orgModal').classList.contains('show')) {
+        renderFiringLog();
+      }
+    }
+
   } catch(e) {}
 }
 
@@ -423,7 +448,6 @@ async function savePost(post) {
   } catch(e) { showToast('❌ Ошибка', true); }
 }
 
-// ЗАКРЫТИЕ И ОТКРЫТИЕ САЙТА ИЗ ПАНЕЛИ (ЗАПИСЬ В ОБЛАКО)
 async function closeSiteByOwner() {
   if (state.user.role !== 'owner') return;
   await fetch(FIREBASE_URL + 'siteClosed.json', { method: 'PUT', body: 'true' });
@@ -457,7 +481,7 @@ try { loadLocal(); updateClock(); } catch(e) {}
 fetchCloudNews(false);
 setInterval(function() { fetchCloudNews(false); }, 5000);
 
-// Запускаем проверку статуса сайта каждые 3 секунды
+// Запускаем проверку статуса сайта и данных каждые 3 секунды
 checkSiteStatus();
 setInterval(checkSiteStatus, 3000);
 
@@ -604,35 +628,93 @@ $('btnAddEditor').onclick = function() {
   state.db.users.push({ name: name, pass: pass, role: role, city: role === 'owner' ? 'all' : city });
   saveLocal(); $('newEditorName').value = ''; $('newEditorPass').value = ''; $('adminErr').textContent = ''; renderUsersList(); showToast('Добавлен');
 };
-$('btnOrgPanel').onclick = function() { $('orgModal').classList.add('show'); renderOrgPanel(); };
+
+// 🆕 ОТКРЫТИЕ ПАНЕЛИ ОРГАНИЗАЦИИ
+function openOrgModal() {
+  $('orgModal').classList.add('show');
+  renderOrgPanel();
+}
 $('btnCloseOrg').onclick = function() { $('orgModal').classList.remove('show'); };
+
 function renderOrgPanel() {
-  if (state.db.orgInfo) { $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'block'; $('displayOrgName').textContent = state.db.orgInfo.name; $('displayOrgINN').textContent = state.db.orgInfo.inn; }
-  else { $('orgWarning').style.display = 'block'; $('orgForm').style.display = 'none'; $('orgInfoDisplay').style.display = 'none'; }
-  var select = $('fireEmpSelect'); select.innerHTML = '<option value="">-- Выберите --</option>';
+  if (state.db.orgInfo) { 
+    $('orgWarning').style.display = 'none'; 
+    $('orgForm').style.display = 'none'; 
+    $('orgInfoDisplay').style.display = 'block'; 
+    $('displayOrgName').textContent = state.db.orgInfo.name; 
+    $('displayOrgINN').textContent = state.db.orgInfo.inn; 
+  }
+  else { 
+    $('orgWarning').style.display = 'block'; 
+    $('orgForm').style.display = 'none'; 
+    $('orgInfoDisplay').style.display = 'none'; 
+  }
+  
+  var select = $('fireEmpSelect'); 
+  var currentVal = select.value;
+  select.innerHTML = '<option value="">-- Выберите --</option>';
   state.db.users.filter(function(e) { return e.name !== 'admin'; }).forEach(function(e) {
     var opt = document.createElement('option'); opt.value = e.name; opt.textContent = e.name; select.appendChild(opt);
   });
+  select.value = currentVal;
+  
+  renderFiringLog();
+}
+
+function renderFiringLog() {
   var logList = $('firingLogList');
-  if (state.db.firingLog.length === 0) logList.innerHTML = '<p style="color:var(--text-muted);">Пусто</p>';
-  else {
+  if (!state.db.firingLog || state.db.firingLog.length === 0) {
+    logList.innerHTML = '<p style="color:var(--text-muted);">Пусто</p>';
+  } else {
     logList.innerHTML = '';
-    state.db.firingLog.slice().reverse().forEach(function(log) {
-      var item = document.createElement('div'); item.style = "background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin-bottom:10px; border-left:3px solid #ef4444;";
-      item.innerHTML = 'Уволен: <b>' + log.empName + '</b><br>Причина: ' + log.reason + '<br><span style="color:var(--text-muted); font-size:12px;">Уволил: ' + log.firedBy + '</span>';
+    state.db.firingLog.forEach(function(log) {
+      var item = document.createElement('div'); 
+      item.style = "background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin-bottom:10px; border-left:3px solid #ef4444;";
+      item.innerHTML = 'Уволен: <b>' + log.empName + '</b><br>Причина: ' + log.reason + '<br><span style="color:var(--text-muted); font-size:12px;">Уволил: ' + log.firedBy + ' • ' + log.dateFired + '</span>';
       logList.appendChild(item);
     });
   }
 }
+
 function showOrgForm() { $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'block'; }
-function saveOrgInfo() { var name = $('orgName').value.trim(); if (!name) return; state.db.orgInfo = { name: name, inn: $('orgINN').value.trim() }; saveLocal(); renderOrgPanel(); showToast('Сохранено'); }
+
+function saveOrgInfo() { 
+  var name = $('orgName').value.trim(); 
+  if (!name) return; 
+  state.db.orgInfo = { name: name, inn: $('orgINN').value.trim() }; 
+  saveLocal(); 
+  renderOrgPanel(); 
+  showToast('Сохранено'); 
+  // Сохраняем в Firebase
+  fetch(FIREBASE_URL + 'orgInfo.json', { method: 'PUT', body: JSON.stringify(state.db.orgInfo) });
+}
+
 function fireEmployee() {
   var emp = $('fireEmpSelect').value; var reason = $('fireReason').value.trim();
   var dFrom = $('fireDateFrom').value; var dTo = $('fireDateTo').value;
   if (!emp || !reason || !dFrom || !dTo) { alert('Заполните все'); return; }
+  
   state.db.users = state.db.users.filter(function(e) { return e.name !== emp; });
-  state.db.firingLog.push({ empName: emp, reason: reason, dateFrom: dFrom, dateTo: dTo, firedBy: state.user.name, dateFired: new Date().toLocaleDateString('ru-RU') });
-  saveLocal(); $('fireReason').value = ''; $('fireDateFrom').value = ''; $('fireDateTo').value = ''; renderOrgPanel(); showToast('Уволен');
+  
+  var logEntry = { 
+    empName: emp, 
+    reason: reason, 
+    dateFrom: dFrom, 
+    dateTo: dTo, 
+    firedBy: state.user.name, 
+    dateFired: new Date().toLocaleDateString('ru-RU') + ' ' + new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'}),
+    time: Date.now()
+  };
+  
+  state.db.firingLog.push(logEntry);
+  saveLocal(); 
+  
+  $('fireReason').value = ''; $('fireDateFrom').value = ''; $('fireDateTo').value = ''; 
+  renderOrgPanel(); 
+  showToast('Уволен');
+  
+  // Сохраняем в Firebase
+  fetch(FIREBASE_URL + 'firingLog.json', { method: 'POST', body: JSON.stringify(logEntry) });
 }
 
 function closeModal(id) { $(id).classList.remove('show'); }
