@@ -495,6 +495,15 @@
   .btn-del-student { background: #fee2e2; color: #ef4444; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
   .btn-del-student:hover { background: #fca5a5; color: #7f1d1d; }
 
+  /* ОЦЕНКИ УЧЕНИКА */
+  .student-grades-card { background: #fff; border-radius: 12px; padding: 20px; border: 1px solid var(--border-color); }
+  .student-grades-table { width: 100%; border-collapse: collapse; }
+  .student-grades-table th, .student-grades-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 15px; }
+  .student-grades-table th { color: #6b7280; font-size: 13px; text-transform: uppercase; }
+  .student-grades-table td { font-weight: 600; color: #1f2937; }
+  .student-grade-badge { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; font-weight: 800; font-size: 15px; color: #fff; }
+  .sg-5 { background: #1a7f37; } .sg-4 { background: #0969da; } .sg-3 { background: #bf8700; } .sg-2 { background: #cf222e; }
+
   /* МОДАЛКИ */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; }
   .modal-content { background: #fff; border-radius: 12px; width: 100%; max-width: 400px; overflow: hidden; border: 2px solid var(--xmas-gold); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
@@ -515,6 +524,9 @@
   .guide-card { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
   .guide-card h4 { color: #1e3a8a; margin-bottom: 8px; font-size: 16px; }
   .guide-card p { color: #4b5563; font-size: 14px; line-height: 1.5; }
+  
+  /* Скрытие для правильного переключения */
+  #student-app, #app { display: none; }
 </style>
 </head>
 <body>
@@ -603,22 +615,13 @@
     </header>
 
     <div class="app-layout">
-      <!-- СЕРОВЕ БОКОВОЕ МЕНЮ -->
+      <!-- СЕРОВЕ БОКОВОЕ МЕНЮ УЧЕНИКА -->
       <aside class="sidebar">
         <div class="sidebar-item active" onclick="switchStudentTab('schedule', this)">
           <span class="icon">📅</span> Расписание
         </div>
-        <div class="sidebar-item" onclick="switchStudentTab('tasks', this)">
-          <span class="icon">📝</span> Задания
-        </div>
         <div class="sidebar-item" onclick="switchStudentTab('grades', this)">
-          <span class="icon">💯</span> Оценки
-        </div>
-        <div class="sidebar-item" onclick="switchStudentTab('study', this)">
-          <span class="icon">📚</span> Учёба
-        </div>
-        <div class="sidebar-item" onclick="switchStudentTab('school', this)">
-          <span class="icon">🏫</span> Школа
+          <span class="icon">💯</span> Мои оценки
         </div>
         
         <div class="sidebar-guide" onclick="openGuide()">
@@ -648,11 +651,21 @@
           <div class="schedule-list" id="student-schedule-list"></div>
         </div>
 
-        <!-- Заглушки для остальных вкладок ученика -->
-        <div id="st-tab-tasks" class="tab-content"><h2>Задания</h2><p style="color:#6b7280; margin-top:10px;">Здесь будут отображаться все ваши задания.</p></div>
-        <div id="st-tab-grades" class="tab-content"><h2>Оценки</h2><p style="color:#6b7280; margin-top:10px;">Здесь будут отображаться ваши оценки.</p></div>
-        <div id="st-tab-study" class="tab-content"><h2>Учёба</h2><p style="color:#6b7280; margin-top:10px;">Раздел для учебных материалов.</p></div>
-        <div id="st-tab-school" class="tab-content"><h2>Школа</h2><p style="color:#6b7280; margin-top:10px;">Информация о школе.</p></div>
+        <!-- Оценки ученика -->
+        <div id="st-tab-grades" class="tab-content">
+          <h2 style="margin-bottom: 20px;">Мои оценки</h2>
+          <div class="student-grades-card">
+            <table class="student-grades-table">
+              <thead>
+                <tr>
+                  <th>Предмет / Дата</th>
+                  <th>Оценка</th>
+                </tr>
+              </thead>
+              <tbody id="student-grades-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -670,7 +683,7 @@
     </header>
 
     <div class="app-layout">
-      <!-- СЕРОВЕ БОКОВОЕ МЕНЮ -->
+      <!-- СЕРОВЕ БОКОВОЕ МЕНЮ УЧИТЕЛЯ/ДИРЕКТОРА -->
       <aside class="sidebar">
         <div class="sidebar-item active" onclick="switchTeacherTab('journal', this)">
           <span class="icon">📓</span> Журнал
@@ -683,9 +696,6 @@
         </div>
         <div class="sidebar-item" onclick="switchTeacherTab('hw', this)">
           <span class="icon">🏠</span> Домашняя работа
-        </div>
-        <div class="sidebar-item" onclick="switchTeacherTab('modules', this)">
-          <span class="icon">🧩</span> Модули
         </div>
         
         <div class="sidebar-guide" onclick="openGuide()">
@@ -752,9 +762,11 @@
           </div>
         </div>
 
-        <!-- Заглушки для остальных вкладок учителя -->
-        <div id="tc-tab-hw" class="tab-content"><h2>Домашняя работа</h2><p style="color:#6b7280; margin-top:10px;">Управление Д/З.</p></div>
-        <div id="tc-tab-modules" class="tab-content"><h2>Модули</h2><p style="color:#6b7280; margin-top:10px;">Управление учебными модулями.</p></div>
+        <!-- ДОМАШНЯЯ РАБОТА -->
+        <div id="tc-tab-hw" class="tab-content">
+          <h2>Домашняя работа</h2>
+          <p style="color:#6b7280; margin-top:10px;">Управление домашними заданиями. (Раздел в разработке)</p>
+        </div>
       </main>
     </div>
   </div>
@@ -806,7 +818,7 @@
     </div>
   </div>
   
-  <!-- МОДАЛКА ДОБАВЛЕНИЯ КР (ОТДЕЛЬНАЯ) -->
+  <!-- МОДАЛКА ДОБАВЛЕНИЯ КР -->
   <div id="add-kr-modal" class="modal-overlay">
     <div class="modal-content modal-form">
       <div class="modal-header">
@@ -845,12 +857,7 @@
 
         <div class="guide-card">
           <h4>🏠 Как задать домашнее задание?</h4>
-          <p>При добавлении обычного урока (или КР) в поле «Домашнее задание» впишите текст (например: «Параграф 5 читать»). Он автоматически появится в дневнике у учеников.</p>
-        </div>
-
-        <div class="guide-card">
-          <h4>🎯 Годовая оценка</h4>
-          <p>В журнале прокрутите таблицу вправо до красной колонки «Годовая» и нажмите на нужную клетку, чтобы вписать итоговую оценку за год.</p>
+          <p>При добавлении обычного урока (или КР) в поле «Домашнее задание» впишите текст. Оно автоматически появится в дневнике у учеников.</p>
         </div>
 
       </div>
@@ -876,7 +883,7 @@
 
   let db;
   try {
-    const saved = localStorage.getItem('ej_db_diary_v5');
+    const saved = localStorage.getItem('ej_db_diary_v7');
     if (saved) db = JSON.parse(saved);
   } catch(e) {}
 
@@ -916,7 +923,13 @@
     saveDB();
   }
 
-  function saveDB() { try { localStorage.setItem('ej_db_diary_v5', JSON.stringify(db)); } catch(e) {} }
+  // Защита: если аккаунта директора нет, добавляем
+  if (!db.users.find(u => u.login === 'director')) {
+    db.users.push({ login: 'director', pass: '123', role: 'director', name: 'Сидоров Д. В.' });
+    saveDB();
+  }
+
+  function saveDB() { try { localStorage.setItem('ej_db_diary_v7', JSON.stringify(db)); } catch(e) {} }
   let currentUser = null;
 
   // ================= ВКЛАДКИ В БОКОВОМ МЕНЮ =================
@@ -992,10 +1005,15 @@
               setTimeout(() => {
                 loader.style.display = 'none';
                 
+                // ГАРАНТИРОВАННО СКРЫВАЕМ ОБА ЭКРАНА
+                document.getElementById('student-app').style.display = 'none';
+                document.getElementById('app').style.display = 'none';
+
                 if (user.role === 'student') {
                   document.getElementById('student-app').style.display = 'flex';
                   document.getElementById('studentNameHeader').textContent = user.name;
                   renderStudentSchedule();
+                  renderStudentGrades();
                 } else {
                   document.getElementById('app').style.display = 'flex';
                   document.getElementById('userNameHeader').textContent = user.name;
@@ -1048,6 +1066,45 @@
         </div>`;
       
       container.innerHTML += cardHtml;
+    });
+  }
+
+  // ================= УЧЕНИК: ОЦЕНКИ =================
+  function renderStudentGrades() {
+    const tbody = document.getElementById('student-grades-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const classData = db.classes['5Б'];
+    const studentId = 's1'; 
+    
+    let allGrades = [];
+    classData.lessons.forEach(lesson => {
+      let gradesArr = (classData.grades[lesson.id] && classData.grades[lesson.id][studentId]) ? classData.grades[lesson.id][studentId] : [];
+      if (gradesArr.length > 0) {
+        allGrades.push({
+          subject: lesson.subject,
+          date: lesson.date,
+          grades: gradesArr
+        });
+      }
+    });
+
+    if (allGrades.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#6b7280;">Оценок пока нет</td></tr>';
+      return;
+    }
+
+    allGrades.forEach(item => {
+      item.grades.forEach(g => {
+        let badgeClass = `sg-${g}`;
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.subject} <span style="font-size:12px; color:#9ca3af; margin-left:8px;">(${item.date})</span></td>
+            <td><span class="student-grade-badge ${badgeClass}">${g}</span></td>
+          </tr>
+        `;
+      });
     });
   }
 
@@ -1122,7 +1179,7 @@
     saveDB();
     
     renderClassManagement();
-    renderTeacherJournal(); // Обновляем журнал, чтобы новый ученик появился в таблице
+    renderTeacherJournal(); 
     
     input.value = '';
   }
@@ -1134,7 +1191,7 @@
     saveDB();
     
     renderClassManagement();
-    renderTeacherJournal(); // Обновляем журнал, чтобы ученик исчез из таблицы
+    renderTeacherJournal(); 
   }
 
   // ================= ДОБАВЛЕНИЕ УРОКА / КР =================
@@ -1537,135 +1594,4 @@ async function runUpdate() {
     printTerm('> Загрузка 30%', '#38bdf8'); await new Promise(r => setTimeout(r, 800));
     printTerm('> Загрузка 60%', '#38bdf8'); await new Promise(r => setTimeout(r, 800));
     printTerm('> Распаковка 100%', '#38bdf8'); await new Promise(r => setTimeout(r, 600));
-    printTerm('✅ Обновление!', '#10b981'); setTimeout(() => { location.reload(); }, 1500);
-  } else { printTerm('❌ Неизвестная команда', '#ef4444'); }
-}
-
-function openExportModal() { $('exportModal').classList.add('show'); }
-function copyExportCode() {
-  var code = $('exportCodeBox').textContent;
-  navigator.clipboard.writeText(code).then(() => showToast('Скопировано!')).catch(() => {
-    var ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Скопировано!');
-  });
-}
-$('btnAdminPanel').onclick = function() { $('adminModal').classList.add('show'); renderUsersList(); };
-$('btnCloseAdmin').onclick = function() { $('adminModal').classList.remove('show'); };
-function renderUsersList() {
-  var list = $('editorList'); list.innerHTML = '';
-  state.db.users.forEach(function(e) {
-    var item = document.createElement('div'); item.className = 'editor-item';
-    var roleMap = { 'owner': 'Владелец', 'creator': 'Создатель', 'staff': 'Сотрудник', 'intern': 'Стажёр' };
-    var roleClass = e.role === 'owner' ? 'role-owner' : (e.role === 'creator' ? 'role-creator' : '');
-    item.innerHTML = '<div><b>' + e.name + '</b> <span class="role-badge ' + roleClass + '">' + roleMap[e.role] + '</span></div>';
-    list.appendChild(item);
-  });
-}
-$('btnAddEditor').onclick = function() {
-  var name = $('newEditorName').value.trim(); var pass = $('newEditorPass').value.trim();
-  var role = $('newEditorRole').value; var city = $('newEditorCity').value;
-  if (name.length < 2 || pass.length < 3) { $('adminErr').textContent = 'Коротко'; return; }
-  if (state.db.users.find(function(e) { return e.name.toLowerCase() === name.toLowerCase(); })) { $('adminErr').textContent = 'Уже есть'; return; }
-  state.db.users.push({ name: name, pass: pass, role: role, city: role === 'owner' ? 'all' : city });
-  saveLocal(); $('newEditorName').value = ''; $('newEditorPass').value = ''; $('adminErr').textContent = ''; renderUsersList(); showToast('Добавлен');
-};
-
-function openOrgModal() {
-  $('orgModal').classList.add('show');
-  renderOrgPanel();
-}
-$('btnCloseOrg').onclick = function() { $('orgModal').classList.remove('show'); };
-
-function renderOrgPanel() {
-  if (state.db.orgInfo) { 
-    $('orgWarning').style.display = 'none'; 
-    $('orgForm').style.display = 'none'; 
-    $('orgInfoDisplay').style.display = 'block'; 
-    $('displayOrgName').textContent = state.db.orgInfo.name; 
-    $('displayOrgINN').textContent = state.db.orgInfo.inn; 
-  }
-  else { 
-    $('orgWarning').style.display = 'block'; 
-    $('orgForm').style.display = 'none'; 
-    $('orgInfoDisplay').style.display = 'none'; 
-  }
-  
-  var select = $('fireEmpSelect'); 
-  var currentVal = select.value;
-  select.innerHTML = '<option value="">-- Выберите --</option>';
-  state.db.users.filter(function(e) { return e.name !== 'admin'; }).forEach(function(e) {
-    var opt = document.createElement('option'); opt.value = e.name; opt.textContent = e.name; select.appendChild(opt);
-  });
-  select.value = currentVal;
-  
-  renderFiringLog();
-}
-
-function renderFiringLog() {
-  var logList = $('firingLogList');
-  if (!state.db.firingLog || state.db.firingLog.length === 0) {
-    logList.innerHTML = '<p style="color:var(--text-muted);">Пусто</p>';
-  } else {
-    logList.innerHTML = '';
-    state.db.firingLog.forEach(function(log) {
-      var item = document.createElement('div'); 
-      item.style = "background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin-bottom:10px; border-left:3px solid #ef4444;";
-      item.innerHTML = 'Уволен: <b>' + log.empName + '</b><br>Причина: ' + log.reason + '<br><span style="color:var(--text-muted); font-size:12px;">Уволил: ' + log.firedBy + ' • ' + log.dateFired + '</span>';
-      logList.appendChild(item);
-    });
-  }
-}
-
-function showOrgForm() { $('orgWarning').style.display = 'none'; $('orgForm').style.display = 'block'; }
-
-function saveOrgInfo() { 
-  var name = $('orgName').value.trim(); 
-  if (!name) return; 
-  state.db.orgInfo = { name: name, inn: $('orgINN').value.trim() }; 
-  saveLocal(); 
-  renderOrgPanel(); 
-  showToast('Сохранено'); 
-  fetch(FIREBASE_URL + 'orgInfo.json', { method: 'PUT', body: JSON.stringify(state.db.orgInfo) });
-}
-
-function fireEmployee() {
-  var emp = $('fireEmpSelect').value; var reason = $('fireReason').value.trim();
-  var dFrom = $('fireDateFrom').value; var dTo = $('fireDateTo').value;
-  if (!emp || !reason || !dFrom || !dTo) { alert('Заполните все'); return; }
-  
-  state.db.users = state.db.users.filter(function(e) { return e.name !== emp; });
-  
-  var logEntry = { 
-    empName: emp, 
-    reason: reason, 
-    dateFrom: dFrom, 
-    dateTo: dTo, 
-    firedBy: state.user.name, 
-    dateFired: new Date().toLocaleDateString('ru-RU') + ' ' + new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'}),
-    time: Date.now()
-  };
-  
-  state.db.firingLog.push(logEntry);
-  saveLocal(); 
-  
-  $('fireReason').value = ''; $('fireDateFrom').value = ''; $('fireDateTo').value = ''; 
-  renderOrgPanel(); 
-  showToast('Уволен');
-  
-  fetch(FIREBASE_URL + 'firingLog.json', { method: 'POST', body: JSON.stringify(logEntry) });
-}
-
-function closeModal(id) { $(id).classList.remove('show'); }
-function showToast(msg, isError) { var t = $('toast'); t.textContent = msg; t.style.background = isError ? '#ef4444' : '#10b981'; t.className = 'toast show'; setTimeout(function() { t.className = 'toast'; }, 4000); }
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-
-// ================= ЛОГИКА МОЯ ШКОЛА =================
-function openSchoolApp() {
-  document.getElementById('school-overlay').style.display = 'flex';
-  const frame = document.getElementById('school-frame');
-  if (!frame.srcdoc) {
-    frame.srcdoc = document.getElementById('school-src').value.trim();
-  }
-}
-</script>
-</body>
-</html>
+   
